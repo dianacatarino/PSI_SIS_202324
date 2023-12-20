@@ -49,6 +49,11 @@ return [
             'showScriptName' => false,
             'rules' => [
                 [
+                    'pattern' => 'api',
+                    'route'   => 'api/site/index',
+                    'suffix'  => '',
+                ],
+                [
                     'class' => 'yii\rest\UrlRule',
                     'controller' => ['api/fornecedor'],
                     'pluralize' => false,
@@ -56,10 +61,8 @@ return [
                         'GET count' => 'count',
                         'GET tipo/{tipo}' => 'fornecedorportipo',
                         'GET localizacao/{localizacao_alojamento}' => 'fornecedorporlocalizacao',
-                        'GET {id}/comentarios/{data}' => 'comentariospordata',
-                        'GET {id}/avaliacoes' => 'avaliacoesmedia',
-                        'GET {id}/reservas' => 'reservasfornecedor',
-                        // Adicione outros endpoints personalizados conforme necessário
+                        'GET {id}/comentariospordata/{data}' => 'comentariospordata',
+                        'GET {id}/avaliacoesmedia' => 'avaliacoesmedia',
                     ],
                     'tokens' => [
                         '{id}' => '<id:\\d+>',
@@ -75,6 +78,9 @@ return [
                     'extraPatterns' => [
                         'GET count' => 'count',
                         'GET reservasconfirmadas' => 'reservasconfirmadas',
+                        'PUT {id}/confirmar' => 'confirmarreserva',
+                        'PUT {id}/cancelar' => 'cancelarreserva',
+                        'GET taxareservas' => 'taxareservas',
                     ],
                     'tokens' => [
                         '{id}' => '<id:\\d+>',
@@ -84,18 +90,24 @@ return [
                     'class' => 'yii\rest\UrlRule',
                     'controller' => ['api/fatura'],
                     'pluralize' => false,
-                ],
-                [
-                    'class' => 'yii\rest\UrlRule',
-                    'controller' => ['api/fatura'],
-                    'tokens' => [
-                        '{id}' => '<id:\\d+>',
-                    ],
                     'extraPatterns' => [
                         'GET count' => 'count',
                     ],
-                ]
-
+                    'tokens' => [
+                        '{id}' => '<id:\\d+>',
+                    ],
+                ],
+                [
+                    'class' => 'yii\rest\UrlRule',
+                    'controller' => ['api/carrinho'],
+                    'pluralize' => false,
+                    'extraPatterns' => [
+                        'GET count' => 'count',
+                    ],
+                    'tokens' => [
+                        '{id}' => '<id:\\d+>',
+                    ],
+                ],
             ],
         ],
     ],

@@ -41,19 +41,21 @@ class FornecedorController extends ActiveController
     {
         // Certifique-se de que $this->user foi definido durante a autenticação
         if ($this->user) {
-            $allowedUsernames = ['admin', 'fornecedor', 'funcionario'];
+            $allowedRoles = ['admin', 'funcionario', 'fornecedor'];
 
-            if (in_array($this->user->username, $allowedUsernames)) {
-                // Permite ações de criar, alterar e excluir
+            // Se o usuário tiver uma relação de perfil e o papel do perfil estiver entre os papéis permitidos
+            if ($this->user->profile && in_array($this->user->profile->role, $allowedRoles)) {
+                // Permite ações de criar, alterar e excluir para usuários com papéis específicos
                 return;
             }
 
-            // Restringe as ações de criar, alterar e excluir
-            if (in_array($action, ['create', 'update', 'delete'])) {
-                throw new \yii\web\ForbiddenHttpException('Acesso negado para ação ' . $action);
+            // Restringe as ações de criar, alterar e excluir para usuários com role 'cliente'
+            if ($this->user->profile && $this->user->profile->role === 'cliente') {
+                if (in_array($action, ['create', 'update', 'delete'])) {
+                    throw new \yii\web\ForbiddenHttpException('Acesso negado para ação ' . $action);
+                }
             }
         }
-
 
         // Obtém o utilizador autenticado
         //$authenticatedUser = $this->user; // Certifique-se de que $this->user foi definido durante a autenticação
@@ -104,13 +106,29 @@ class FornecedorController extends ActiveController
         $dataFormatada = date('Y-m-d', strtotime($data));
 
         $query = Comentario::find()
+            ->select(['id', 'titulo', 'descricao', 'data_comentario', 'cliente_id', 'fornecedor_id'])
+            ->with(['cliente', 'fornecedor']) // Carregar relações cliente e fornecedor
             ->where(['fornecedor_id' => $id, 'data_comentario' => $dataFormatada]);
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
         ]);
 
-        return $dataProvider->getModels();
+        $comentarios = $dataProvider->getModels();
+
+        // Mapear resultados para incluir nome do cliente e do fornecedor
+        $resultados = array_map(function ($comentario) {
+            return [
+                'id' => $comentario->id,
+                'titulo' => $comentario->titulo,
+                'descricao' => $comentario->descricao,
+                'data_comentario' => $comentario->data_comentario,
+                'cliente_nome' => $comentario->cliente->profile->name,
+                'fornecedor_nome' => $comentario->fornecedor->nome_alojamento,
+            ];
+        }, $comentarios);
+
+        return $resultados;
     }
 
     public function actionAvaliacoesmedia($id)

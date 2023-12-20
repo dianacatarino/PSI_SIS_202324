@@ -153,4 +153,15 @@ class Reserva extends \yii\db\ActiveRecord
             ->indexBy('user_id')
             ->column();
     }
+
+    /**
+     * Gets query for [[Confirmacao]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getConfirmacao()
+    {
+        return $this->hasOne(Confirmacao::class, ['reserva_id' => 'id']);
+    }
+
 }

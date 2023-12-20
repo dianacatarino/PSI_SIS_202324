@@ -2,7 +2,11 @@
 
 namespace backend\modules\api\controllers;
 
+use common\models\Carrinho;
+use yii\data\ActiveDataProvider;
 use yii\rest\ActiveController;
+use yii\web\NotFoundHttpException;
+use yii\web\ServerErrorHttpException;
 
 class CarrinhoController extends ActiveController
 {
@@ -11,11 +15,24 @@ class CarrinhoController extends ActiveController
 
     public function actionAdicionarItem($clienteId, $fornecedorId, $reservaId, $quantidade, $preco)
     {
-        // Lógica para adicionar item ao carrinho
-        // Certifique-se de validar os parâmetros e manipular os dados de acordo
+        try {
+            // Valide os parâmetros, manipule os dados e adicione o item ao carrinho
+            // Exemplo básico, você deve ajustar de acordo com sua lógica
+            $carrinho = new Carrinho();
+            $carrinho->cliente_id = $clienteId;
+            $carrinho->fornecedor_id = $fornecedorId;
+            $carrinho->reserva_id = $reservaId;
+            $carrinho->quantidade = $quantidade;
+            $carrinho->preco = $preco;
 
-        // Exemplo de resposta
-        return ['success' => true, 'message' => 'Item adicionado ao carrinho com sucesso.'];
+            if ($carrinho->save()) {
+                return ['success' => true, 'message' => 'Item adicionado ao carrinho com sucesso.'];
+            } else {
+                throw new ServerErrorHttpException('Erro ao salvar o item no carrinho.');
+            }
+        } catch (\Exception $e) {
+            throw new ServerErrorHttpException('Erro interno do servidor.', 500, $e);
+        }
     }
 
     public function actionListarItens($clienteId)
@@ -31,10 +48,21 @@ class CarrinhoController extends ActiveController
 
     public function actionRemoverItem($itemId)
     {
-        // Lógica para remover item do carrinho
-        // Certifique-se de validar o parâmetro e manipular os dados de acordo
+        try {
+            // Valide o parâmetro, encontre o item e remova do carrinho
+            $carrinho = Carrinho::findOne($itemId);
 
-        // Exemplo de resposta
-        return ['success' => true, 'message' => 'Item removido do carrinho com sucesso.'];
+            if (!$carrinho) {
+                throw new NotFoundHttpException("Item do carrinho com ID $itemId não encontrado.");
+            }
+
+            if ($carrinho->delete()) {
+                return ['success' => true, 'message' => 'Item removido do carrinho com sucesso.'];
+            } else {
+                throw new ServerErrorHttpException('Erro ao remover o item do carrinho.');
+            }
+        } catch (\Exception $e) {
+            throw new ServerErrorHttpException('Erro interno do servidor.', 500, $e);
+        }
     }
 }
