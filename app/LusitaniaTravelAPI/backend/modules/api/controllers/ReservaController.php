@@ -35,7 +35,10 @@ class ReservaController extends ActiveController
         // Calcula a taxa de reservas confirmadas
         $taxaReservasConfirmadas = count($reservasConfirmadas) / count($todasAsReservas) * 100;
 
-        return ['taxa_reservas' => $taxaReservasConfirmadas];
+        // Formata o valor para exibir até duas casas decimais
+        $taxaReservasConfirmadasFormatada = number_format($taxaReservasConfirmadas, 2);
+
+        return ['taxa_reservas' => $taxaReservasConfirmadasFormatada];
     }
 
     public function actionReservasconfirmadas()

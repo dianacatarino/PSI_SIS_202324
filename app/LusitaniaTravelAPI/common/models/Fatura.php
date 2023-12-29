@@ -88,4 +88,9 @@ class Fatura extends \yii\db\ActiveRecord
     {
         return $this->hasOne(Reserva::class, ['id' => 'reserva_id']);
     }
+
+    public static function selectReservas()
+    {
+        return Reserva::find()->select(['id'])->indexBy('id')->column();
+    }
 }

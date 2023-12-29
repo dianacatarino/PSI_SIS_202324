@@ -3,8 +3,10 @@
 namespace backend\modules\api\controllers;
 
 use backend\modules\api\components\CustomAuth;
+use common\models\Fatura;
 use yii\data\ActiveDataProvider;
 use yii\rest\ActiveController;
+use yii\web\BadRequestHttpException;
 
 class FaturaController extends ActiveController
 {

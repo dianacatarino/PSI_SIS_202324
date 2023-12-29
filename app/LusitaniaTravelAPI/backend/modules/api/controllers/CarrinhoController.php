@@ -2,67 +2,68 @@
 
 namespace backend\modules\api\controllers;
 
-use common\models\Carrinho;
-use yii\data\ActiveDataProvider;
+use frontend\models\Carrinho;
+use common\models\Fornecedor;
+use Yii;
 use yii\rest\ActiveController;
-use yii\web\NotFoundHttpException;
 use yii\web\ServerErrorHttpException;
 
 class CarrinhoController extends ActiveController
 {
     public $user = null;
-    public $modelClass = 'common\models\Carrinho';
+    public $modelClass = 'frontend\models\Carrinho';
 
-    public function actionAdicionarItem($clienteId, $fornecedorId, $reservaId, $quantidade, $preco)
+    public function actionCalculartotal($nomecliente)
     {
-        try {
-            // Valide os parâmetros, manipule os dados e adicione o item ao carrinho
-            // Exemplo básico, você deve ajustar de acordo com sua lógica
-            $carrinho = new Carrinho();
-            $carrinho->cliente_id = $clienteId;
-            $carrinho->fornecedor_id = $fornecedorId;
-            $carrinho->reserva_id = $reservaId;
-            $carrinho->quantidade = $quantidade;
-            $carrinho->preco = $preco;
+        // Obtém todos os itens no carrinho para o usuário com o nome específico
+        $itensCarrinho = Carrinho::find()
+            ->joinWith(['cliente.profile']) // Faz a junção com a tabela de perfil do usuário
+            ->where(['profile.name' => $nomecliente])
+            ->all();
 
-            if ($carrinho->save()) {
-                return ['success' => true, 'message' => 'Item adicionado ao carrinho com sucesso.'];
-            } else {
-                throw new ServerErrorHttpException('Erro ao salvar o item no carrinho.');
-            }
-        } catch (\Exception $e) {
-            throw new ServerErrorHttpException('Erro interno do servidor.', 500, $e);
+        $totalCalculado = 0;
+
+        // Calcula o total somando os preços de cada item
+        foreach ($itensCarrinho as $item) {
+            $totalCalculado += $item->subtotal;
         }
+
+        return ['total' => $totalCalculado];
     }
 
-    public function actionListarItens($clienteId)
+    public function actionAdicionarcarrinho($fornecedorId)
     {
-        $query = Carrinho::find()->where(['cliente_id' => $clienteId]);
+        $request = Yii::$app->getRequest();
 
-        $dataProvider = new ActiveDataProvider([
-            'query' => $query,
+        // Certifique-se de que você tem os parâmetros necessários
+        $quantidade = $request->getBodyParam('quantidade');
+
+        // Valide os parâmetros conforme necessário
+        if ($quantidade === null || !is_numeric($quantidade) || $quantidade <= 0) {
+            throw new ServerErrorHttpException('Parâmetros inválidos para adicionar ao carrinho.');
+        }
+
+        // Encontre o fornecedor com base no ID
+        $fornecedor = Fornecedor::findOne($fornecedorId);
+
+        // Verifique se o fornecedor existe
+        if ($fornecedor === null) {
+            throw new ServerErrorHttpException('Fornecedor não encontrado.');
+        }
+
+        // Crie uma nova instância do modelo Carrinho
+        $carrinhoItem = new Carrinho([
+            'fornecedor_id' => $fornecedorId,
+            'quantidade' => $quantidade,
+            'preco' => $fornecedor->precopornoite, // ajuste conforme necessário
+            // outros campos do carrinho, se necessário
         ]);
 
-        return $dataProvider->getModels();
-    }
-
-    public function actionRemoverItem($itemId)
-    {
-        try {
-            // Valide o parâmetro, encontre o item e remova do carrinho
-            $carrinho = Carrinho::findOne($itemId);
-
-            if (!$carrinho) {
-                throw new NotFoundHttpException("Item do carrinho com ID $itemId não encontrado.");
-            }
-
-            if ($carrinho->delete()) {
-                return ['success' => true, 'message' => 'Item removido do carrinho com sucesso.'];
-            } else {
-                throw new ServerErrorHttpException('Erro ao remover o item do carrinho.');
-            }
-        } catch (\Exception $e) {
-            throw new ServerErrorHttpException('Erro interno do servidor.', 500, $e);
+        // Salve o item do carrinho
+        if (!$carrinhoItem->save()) {
+            throw new ServerErrorHttpException('Não foi possível adicionar o item ao carrinho.');
         }
+
+        return ['message' => 'Item adicionado ao carrinho com sucesso.'];
     }
 }

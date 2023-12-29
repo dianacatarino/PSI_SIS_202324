@@ -102,10 +102,11 @@ return [
                     'controller' => ['api/carrinho'],
                     'pluralize' => false,
                     'extraPatterns' => [
-                        'GET count' => 'count',
+                        'GET calculartotal/{nomecliente}' => 'calculartotal',
                     ],
                     'tokens' => [
                         '{id}' => '<id:\\d+>',
+                        '{nomecliente}' => '<nomecliente:\w+>',
                     ],
                 ],
             ],
