@@ -4,6 +4,9 @@ namespace backend\modules\api\controllers;
 
 use common\models\Avaliacao;
 use common\models\Comentario;
+use common\models\Fornecedor;
+use common\models\Imagem;
+use Yii;
 use yii\data\ActiveDataProvider;
 use yii\filters\auth\HttpBasicAuth;
 use yii\rest\ActiveController;
@@ -31,7 +34,7 @@ class FornecedorController extends ActiveController
         $user = \common\models\User::findByUsername($username);
         if ($user && $user->validatePassword($password))
         {
-            //$this->user=$user; //Guardar user autenticado
+            $this->user=$user; //Guardar user autenticado
             return $user;
         }
         throw new \yii\web\ForbiddenHttpException('No authentication'); //403
@@ -40,25 +43,47 @@ class FornecedorController extends ActiveController
     public function checkAccess($action, $model = null, $params = [])
     {
         // Certifique-se de que $this->user foi definido durante a autenticação
-        if ($this->user) {
+        if ($this->user && Yii::$app->user->identity) {
+            // Obtém o papel do perfil do usuário
+            $userRole = Yii::$app->user->identity->profile->role;
+
+            // Define os papéis permitidos para acessar ações de criar, atualizar e excluir
             $allowedRoles = ['admin', 'funcionario', 'fornecedor'];
 
-            // Se o usuário tiver uma relação de perfil e o papel do perfil estiver entre os papéis permitidos
-            if ($this->user->profile && in_array($this->user->profile->role, $allowedRoles)) {
-                // Permite ações de criar, alterar e excluir para usuários com papéis específicos
+            // Verifica se o usuário tem permissão para a ação específica
+            if (in_array($userRole, $allowedRoles)) {
+                // O usuário tem permissão para todas as ações
                 return;
+            } elseif ($userRole === 'cliente' && in_array($action, ['create', 'update', 'delete'])) {
+                // Usuários com papel 'cliente' não têm permissão para criar, atualizar e excluir
+                throw new \yii\web\ForbiddenHttpException('Acesso negado para ação ' . $action);
             }
-
-            // Restringe as ações de criar, alterar e excluir para usuários com role 'cliente'
-            if ($this->user->profile && $this->user->profile->role === 'cliente') {
-                if (in_array($action, ['create', 'update', 'delete'])) {
-                    throw new \yii\web\ForbiddenHttpException('Acesso negado para ação ' . $action);
-                }
-            }
+            // Permite ações de leitura (GET) para todos os usuários, incluindo clientes
+        } else {
+            // Lança uma exceção se o usuário não estiver autenticado
+            throw new \yii\web\ForbiddenHttpException('Usuário não autenticado');
         }
 
         // Obtém o utilizador autenticado
         //$authenticatedUser = $this->user; // Certifique-se de que $this->user foi definido durante a autenticação
+    }
+
+    public function actionAlojamentos()
+    {
+        // Obtém todos os fornecedores
+        $fornecedores = Fornecedor::find()->all();
+
+        $fornecedoresComImagens = [];
+
+        // Para cada fornecedor, obtém as imagens associadas
+        foreach ($fornecedores as $fornecedor) {
+            $fornecedorComImagens = $fornecedor->toArray();
+            $fornecedorComImagens['imagens'] = $fornecedor->imagens;
+
+            $fornecedoresComImagens[] = $fornecedorComImagens;
+        }
+
+        return $fornecedoresComImagens;
     }
 
     public function actionCount()
@@ -145,6 +170,8 @@ class FornecedorController extends ActiveController
             throw new \yii\web\NotFoundHttpException("Nenhuma avaliação encontrada para o alojamento com ID '$id'.");
         }
     }
+
+
 
 }
 

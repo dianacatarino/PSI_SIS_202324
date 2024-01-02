@@ -5,6 +5,8 @@ namespace backend\modules\api\controllers;
 use common\models\Confirmacao;
 use common\models\Reserva;
 use common\models\User;
+use Yii;
+use yii\filters\auth\HttpBasicAuth;
 use yii\rest\ActiveController;
 use yii\web\NotFoundHttpException;
 use yii\web\ServerErrorHttpException;
@@ -13,6 +15,56 @@ class ReservaController extends ActiveController
 {
     public $user = null;
     public $modelClass = 'common\models\Reserva';
+
+    public function behaviors()
+    {
+        $behaviors = parent::behaviors();
+        $behaviors['authenticator'] = [
+            'class' => HttpBasicAuth::className(), // ou QueryParamAuth::className(),
+            //’except' => ['index', 'view'], //Excluir aos GETs
+            'auth' => [$this, 'auth']
+        ];
+        return $behaviors;
+    }
+
+    public function auth($username, $password)
+    {
+        $user = \common\models\User::findByUsername($username);
+        if ($user && $user->validatePassword($password))
+        {
+            $this->user=$user; //Guardar user autenticado
+            return $user;
+        }
+        throw new \yii\web\ForbiddenHttpException('No authentication'); //403
+    }
+
+    public function checkAccess($action, $model = null, $params = [])
+    {
+        // Certifique-se de que $this->user foi definido durante a autenticação
+        if ($this->user && Yii::$app->user->identity) {
+            // Obtém o papel do perfil do usuário
+            $userRole = Yii::$app->user->identity->profile->role;
+
+            // Define os papéis permitidos para acessar ações de criar, atualizar e excluir
+            $allowedRoles = ['admin', 'funcionario', 'fornecedor'];
+
+            // Verifica se o usuário tem permissão para a ação específica
+            if (in_array($userRole, $allowedRoles)) {
+                // O usuário tem permissão para todas as ações
+                return;
+            } elseif ($userRole === 'cliente' && in_array($action, ['create', 'update', 'delete'])) {
+                // Usuários com papel 'cliente' não têm permissão para criar, atualizar e excluir
+                throw new \yii\web\ForbiddenHttpException('Acesso negado para ação ' . $action);
+            }
+            // Permite ações de leitura (GET) para todos os usuários, incluindo clientes
+        } else {
+            // Lança uma exceção se o usuário não estiver autenticado
+            throw new \yii\web\ForbiddenHttpException('Usuário não autenticado');
+        }
+
+        // Obtém o utilizador autenticado
+        //$authenticatedUser = $this->user; // Certifique-se de que $this->user foi definido durante a autenticação
+    }
 
     public function actionCount()
     {

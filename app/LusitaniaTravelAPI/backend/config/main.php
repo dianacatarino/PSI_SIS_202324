@@ -59,6 +59,7 @@ return [
                     'pluralize' => false,
                     'extraPatterns' => [
                         'GET count' => 'count',
+                        'GET alojamentos' => 'alojamentos',
                         'GET tipo/{tipo}' => 'fornecedorportipo',
                         'GET localizacao/{localizacao_alojamento}' => 'fornecedorporlocalizacao',
                         'GET {id}/comentariospordata/{data}' => 'comentariospordata',
