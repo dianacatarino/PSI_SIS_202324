@@ -202,6 +202,4 @@ class ReservaController extends ActiveController
             throw new ServerErrorHttpException('Erro interno do servidor.', 500, $e);
         }
     }
-
-
 }

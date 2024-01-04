@@ -60,8 +60,8 @@ return [
                     'extraPatterns' => [
                         'GET count' => 'count',
                         'GET alojamentos' => 'alojamentos',
-                        'GET tipo/{tipo}' => 'fornecedorportipo',
-                        'GET localizacao/{localizacao_alojamento}' => 'fornecedorporlocalizacao',
+                        'GET tipo/{tipo}' => 'tipo',
+                        'GET localizacao/{localizacao_alojamento}' => 'localizacao',
                         'GET {id}/comentariospordata/{data}' => 'comentariospordata',
                         'GET {id}/avaliacoesmedia' => 'avaliacoesmedia',
                     ],
@@ -104,10 +104,14 @@ return [
                     'pluralize' => false,
                     'extraPatterns' => [
                         'GET calculartotal/{nomecliente}' => 'calculartotal',
+                        'POST adicionarcarrinho/{fornecedorid}' => 'adicionarcarrinho',
+                        'DELETE limparcarrinho/{fornecedorid}' => 'removercarrinho',
+                        'PUT atualizarcarrinho/{fornecedorid}' => 'atualizarcarrinho',
                     ],
                     'tokens' => [
                         '{id}' => '<id:\\d+>',
                         '{nomecliente}' => '<nomecliente:\w+>',
+                        '{fornecedorid}' => '<fornecedorId:\d+>',
                     ],
                 ],
             ],

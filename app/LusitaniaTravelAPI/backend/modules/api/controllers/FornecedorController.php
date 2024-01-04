@@ -52,6 +52,12 @@ class FornecedorController extends ActiveController
 
             // Verifica se o usuário tem permissão para a ação específica
             if (in_array($userRole, $allowedRoles)) {
+                if ($action === 'avaliacoesmedia' || $action === 'comentariospordata' || $action === 'count') {
+                    // Restringe o acesso às ações avaliacoesmedia, comentariospordata, e count para admin, funcionario, e fornecedor
+                    if (!in_array($userRole, ['admin', 'funcionario', 'fornecedor'])) {
+                        throw new \yii\web\ForbiddenHttpException('Acesso negado para ação ' . $action);
+                    }
+                }
                 // O usuário tem permissão para todas as ações
                 return;
             } elseif ($userRole === 'cliente' && in_array($action, ['create', 'update', 'delete'])) {
@@ -61,7 +67,7 @@ class FornecedorController extends ActiveController
             // Permite ações de leitura (GET) para todos os usuários, incluindo clientes
         } else {
             // Lança uma exceção se o usuário não estiver autenticado
-            throw new \yii\web\ForbiddenHttpException('Usuário não autenticado');
+            throw new \yii\web\ForbiddenHttpException('User não autenticado');
         }
 
         // Obtém o utilizador autenticado
@@ -93,8 +99,7 @@ class FornecedorController extends ActiveController
         return ['count' => count($recs)];
     }
 
-
-    public function actionFornecedorportipo($tipo)
+    public function actionTipo($tipo)
     {
         $fornecedorModel = new $this->modelClass;
 
@@ -108,7 +113,7 @@ class FornecedorController extends ActiveController
         return $fornecedores;
     }
 
-    public function actionFornecedorporlocalizacao($localizacao_alojamento)
+    public function actionLocalizacao($localizacao_alojamento)
     {
         $fornecedorModel = new $this->modelClass;
 
@@ -170,8 +175,5 @@ class FornecedorController extends ActiveController
             throw new \yii\web\NotFoundHttpException("Nenhuma avaliação encontrada para o alojamento com ID '$id'.");
         }
     }
-
-
-
 }
 
