@@ -30,9 +30,8 @@ class ReservaController extends ActiveController
     public function auth($username, $password)
     {
         $user = \common\models\User::findByUsername($username);
-        if ($user && $user->validatePassword($password))
-        {
-            $this->user=$user; //Guardar user autenticado
+        if ($user && $user->validatePassword($password)) {
+            $this->user = $user; //Guardar user autenticado
             return $user;
         }
         throw new \yii\web\ForbiddenHttpException('No authentication'); //403
@@ -163,6 +162,14 @@ class ReservaController extends ActiveController
             $confirmacao->dataconfirmacao = date('Y-m-d'); // Adiciona a data de confirmação
 
             if ($confirmacao->save()) {
+                // Inicializa o cliente MQTT
+                $mqtt = new phpMQTT("127.0.0.1", 1883, "cliente_id");
+
+                if ($mqtt->connect()) {
+                    $mqtt->publish("topico/reserva_confirmada", "Reserva confirmada com ID: " . $id);
+                    $mqtt->close();
+                }
+
                 return ['status' => 'success', 'message' => 'Reserva confirmada com sucesso.'];
             } else {
                 throw new ServerErrorHttpException('Erro ao salvar a confirmação.');
@@ -194,6 +201,14 @@ class ReservaController extends ActiveController
             $confirmacao->dataconfirmacao = date('Y-m-d'); // Adiciona apenas a data atual
 
             if ($confirmacao->save()) {
+                // Inicializa o cliente MQTT
+                $mqtt = new phpMQTT("127.0.0.1", 1883, "cliente_id");
+
+                if ($mqtt->connect()) {
+                    $mqtt->publish("topico/reserva_cancelada", "Reserva cancelada com ID: " . $id);
+                    $mqtt->close();
+                }
+
                 return ['status' => 'success', 'message' => 'Reserva cancelada com sucesso.'];
             } else {
                 throw new ServerErrorHttpException('Erro ao salvar a confirmação.');
