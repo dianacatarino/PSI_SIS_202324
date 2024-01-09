@@ -3,6 +3,9 @@
 namespace backend\modules\api\controllers;
 
 use common\models\Confirmacao;
+use common\models\Fatura;
+use common\models\Linhasfatura;
+use common\models\Linhasreserva;
 use common\models\Reserva;
 use common\models\User;
 use frontend\models\Carrinho;
@@ -53,16 +56,15 @@ class CarrinhoController extends ActiveController
             // Verifica se o usuário tem permissão para a ação específica
             if (in_array($userRole, $allowedRoles)) {
                 // Negar acesso a ações customizadas para admin, funcionario e fornecedor
-                if (in_array($action, ['Adicionarcarrinho', 'Limparcarrinho','Atualizarcarrinho'])) {
+                if (in_array($action, ['Adicionarcarrinho', 'Removercarrinho','Finalizarcarrinho'])) {
                     if (in_array($userRole, ['admin', 'funcionario', 'fornecedor'])) {
                         throw new \yii\web\ForbiddenHttpException('Acesso negado para ação ' . $action);
                     }
                 }
-
-                // O usuário tem permissão para todas as ações
+                // O user tem permissão para todas as ações
                 return;
             } elseif ($userRole === 'cliente' && in_array($action, ['create', 'update', 'delete'])) {
-                // Usuários com papel 'cliente' têm permissão para criar, atualizar e excluir
+                // Users com papel 'cliente' têm permissão para criar, atualizar e excluir
                 return;
             }
         }
@@ -77,20 +79,35 @@ class CarrinhoController extends ActiveController
 
     public function actionCalculartotal($nomecliente)
     {
-        // Obtém todos os itens no carrinho para o user com o nome específico
+        // Obtém todos os itens no carrinho para o usuário com o nome específico
         $itensCarrinho = Carrinho::find()
-            ->joinWith(['cliente.profile']) // Faz a junção com a tabela de perfil do user
+            ->joinWith(['cliente.profile']) // Faz a junção com a tabela de perfil do usuário
             ->where(['profile.name' => $nomecliente])
             ->all();
 
         $totalCalculado = 0;
+        $carrinhoDetalhes = [];
 
-        // Calcula o total somando os preços de cada item
+        // Calcula o total somando os preços de cada item e armazena detalhes do carrinho
         foreach ($itensCarrinho as $item) {
             $totalCalculado += $item->subtotal;
+
+            // Armazena detalhes do carrinho
+            $carrinhoDetalhes[] = [
+                'id' => $item->id,
+                'fornecedor' => $item->fornecedor->nome_alojamento,
+                'cliente_id' => $item->cliente_id,
+                'quantidade' => $item->quantidade,
+                'preco' => $item->preco,
+                'subtotal' => $item->subtotal,
+                'reserva_id' => $item->reserva_id,
+            ];
         }
 
-        return ['total' => $totalCalculado];
+        return [
+            'total' => $totalCalculado,
+            'carrinhoDetalhes' => $carrinhoDetalhes,
+        ];
     }
 
     public function actionAdicionarcarrinho($fornecedorId)
@@ -135,28 +152,41 @@ class CarrinhoController extends ActiveController
         // Salva a confirmação
         $confirmacao->save();
 
+        $subtotal = 1 * $fornecedor->precopornoite;
+
         // Cria um novo item no carrinho associado à reserva
         $carrinhoExistente = new Carrinho([
             'fornecedor_id' => $fornecedorId,
             'cliente_id' => $clienteId,
             'quantidade' => 1,
             'preco' => $fornecedor->precopornoite,
-            'subtotal' => 0,
+            'subtotal' => $subtotal,
             'reserva_id' => $reservaId,
         ]);
 
         // Salva o item no carrinho
         $carrinhoExistente->save();
 
-        // Retorna uma resposta adequada (por exemplo, uma mensagem de sucesso ou detalhes do carrinho)
+        // Obtém o nome do alojamento e o nome do cliente
+        $nomeAlojamento = $fornecedor->nome_alojamento;
+        $nomeCliente = $carrinhoExistente->cliente->profile->name;
+
+        // Retorna uma resposta adequada ao cliente
         return [
             'message' => 'Item adicionado ao carrinho com sucesso.',
-            'data' => $carrinhoExistente->attributes, // You can modify this based on what data you want to include
+            'data' => [
+                'nome_alojamento' => $nomeAlojamento,
+                'cliente_nome' => $nomeCliente,
+                'quantidade' => $carrinhoExistente->quantidade,
+                'preco' => $carrinhoExistente->preco,
+                'subtotal' => $carrinhoExistente->subtotal,
+                'reserva_id' => $carrinhoExistente->reserva_id,
+            ],
         ];
     }
 
 
-    public function actionLimparcarrinho($fornecedorId)
+    public function actionRemovercarrinho($fornecedorId)
     {
         // Obtém o ID do cliente atualmente autenticado
         $clienteId = Yii::$app->user->identity->id;
@@ -166,42 +196,93 @@ class CarrinhoController extends ActiveController
             ->where(['cliente_id' => $clienteId, 'fornecedor_id' => $fornecedorId])
             ->all();
 
+        // Inicializa um array para armazenar os atributos do carrinho removido
+        $carrinhoRemovido = [];
+
         // Remove cada item do carrinho
         foreach ($itensCarrinho as $item) {
+            // Remove a confirmação associada à reserva
+            $confirmacao = Confirmacao::findOne(['reserva_id' => $item->reserva_id, 'fornecedor_id' => $fornecedorId]);
+            if ($confirmacao !== null) {
+                $confirmacao->delete();
+            }
+
+            // Armazena os atributos do carrinho antes de removê-lo
+            $carrinhoRemovido[] = [
+                'nome_alojamento' => $item->fornecedor->nome_alojamento,
+                'cliente_nome' => $item->cliente->profile->name,
+                'quantidade' => $item->quantidade,
+                'preco' => $item->preco,
+                'subtotal' => $item->subtotal,
+                'reserva_id' => $item->reserva_id,
+            ];
+
+            // Remove o item do carrinho
             $item->delete();
         }
 
-        return ['message' => 'Carrinho limpo com sucesso para o fornecedor ID ' . $fornecedorId];
-    }
-
-    public function actionAtualizarcarrinho($fornecedorId)
-    {
-        // Verifica se o fornecedor existe
-        $fornecedor = Fornecedor::findOne($fornecedorId);
-
-        if (!$fornecedor) {
-            throw new NotFoundHttpException('Fornecedor não encontrado.');
-        }
-
-        // Lógica para atualizar o preço do carrinho com base no novo preço do fornecedor
-        $novosItensCarrinho = Carrinho::find()
-            ->andWhere(['fornecedor_id' => $fornecedorId])
-            ->all();
-
-        foreach ($novosItensCarrinho as $item) {
-            // Atualiza o preço do carrinho com o novo preço do fornecedor
-            $item->preco = $fornecedor->precoPorNoite;
-            $item->subtotal = $item->quantidade * $item->preco;
-
-            // Salva as alterações no item do carrinho
-            $item->save();
-        }
-
+        // Retorna uma resposta que inclui os atributos do carrinho removido
         return [
-            'message' => 'Item adicionado ao carrinho com sucesso.',
+            'message' => 'Itens removidos do carrinho com sucesso para o fornecedor ID ' . $fornecedorId,
+            'carrinho_removido' => $carrinhoRemovido,
         ];
     }
 
 
+    public function actionFinalizarcarrinho($reservaId)
+    {
+        // Obtém o ID do cliente atualmente autenticado
+        $clienteId = Yii::$app->user->identity->id;
 
+        // Encontra todos os itens no carrinho para a reserva específica
+        $itensCarrinho = Carrinho::find()
+            ->where(['cliente_id' => $clienteId, 'reserva_id' => $reservaId])
+            ->all();
+
+        // Verifica se a reserva existe
+        $reserva = Reserva::findOne($reservaId);
+        if (!$reserva) {
+            throw new NotFoundHttpException('Reserva não encontrada.');
+        }
+
+        // Lógica para limpar os itens do carrinho associados à reserva
+        foreach ($itensCarrinho as $item) {
+            $item->delete();
+        }
+
+        // Lógica para criar a fatura e as linhas de fatura
+        $fatura = new Fatura();
+        $fatura->totalf = $reserva->valor;
+        $fatura->totalsi = $reserva->valor - 0.23;
+        $fatura->iva = 0.23;
+        $fatura->empresa_id = 1;
+        $fatura->reserva_id = $reserva->id;
+        $fatura->data = date('Y-m-d');
+        $fatura->save();
+
+        // Buscar as LinhasReservas associadas à reserva
+        $linhasReservas = Linhasreserva::findAll(['reservas_id' => $reserva->id]);
+
+        foreach ($itensCarrinho as $item) {
+            foreach ($linhasReservas as $linhaReserva) {
+                $linhaFatura = new LinhasFatura();
+                $linhaFatura->quantidade = $item->quantidade;
+                $linhaFatura->precounitario = $item->preco;
+                $linhaFatura->subtotal = $item->subtotal;
+                $linhaFatura->iva = 0.23;
+                $linhaFatura->fatura_id = $fatura->id;
+                $linhaFatura->linhasreservas_id = $linhaReserva->id;
+                $linhaFatura->save();
+            }
+        }
+
+        // Mensagem de sucesso e atributos da reserva
+        $mensagem = 'Reserva finalizada com sucesso.';
+        $atributosReserva = $reserva->attributes;
+
+        return [
+            'message' => $mensagem,
+            'reserva' => $atributosReserva,
+        ];
+    }
 }

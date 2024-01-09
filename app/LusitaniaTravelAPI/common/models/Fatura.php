@@ -2,9 +2,7 @@
 
 namespace common\models;
 
-use common\models\Reserva;
 use backend\models\Empresa;
-use Yii;
 
 /**
  * This is the model class for table "faturas".

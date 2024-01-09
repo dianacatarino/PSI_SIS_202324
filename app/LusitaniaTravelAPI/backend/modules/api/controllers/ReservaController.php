@@ -225,12 +225,40 @@ class ReservaController extends ActiveController
         $linhaReserva = Linhasreserva::findOne(['reservas_id' => $id]);
         $confirmacao = Confirmacao::findOne(['reserva_id' => $id]);
 
+        // Obtém o nome do alojamento
+        $fornecedorNome = $reserva->fornecedor->nome_alojamento;
+
+        // Obtém os nomes do cliente e funcionário
+        $clienteNome = $reserva->cliente->profile->name;
+        $funcionarioNome = $reserva->funcionario->profile->name;
+
+        // Obtém o nome do alojamento para a confirmação
+        $fornecedorNomeConfirmacao = $confirmacao->fornecedor->nome_alojamento;
+
         return [
-            'reserva' => $reserva->attributes,
+            'reserva' => [
+                'id' => $reserva->id,
+                'tipo' => $reserva->tipo,
+                'checkin' => $reserva->checkin,
+                'checkout' => $reserva->checkout,
+                'numeroquartos' => $reserva->numeroquartos,
+                'numeroclientes' => $reserva->numeroclientes,
+                'valor' => $reserva->valor,
+                'cliente_id' => $clienteNome,
+                'funcionario_id' => $funcionarioNome,
+                'fornecedor_id' => $fornecedorNome,
+            ],
             'linha_reserva' => $linhaReserva ? $linhaReserva->attributes : null,
-            'confirmacao' => $confirmacao ? $confirmacao->attributes : null,
+            'confirmacao' => $confirmacao ? [
+                'id' => $confirmacao->id,
+                'estado' => $confirmacao->estado,
+                'dataconfirmacao' => $confirmacao->dataconfirmacao,
+                'reserva_id' => $confirmacao->reserva_id,
+                'fornecedor_id' => $fornecedorNomeConfirmacao,
+            ] : null,
         ];
     }
+
 
     public function FazPublishNoMosquitto($canal,$msg)
     {

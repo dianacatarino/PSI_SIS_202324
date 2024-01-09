@@ -92,14 +92,14 @@ return [
                     'controller' => ['api/fatura'],
                     'pluralize' => false,
                     'extraPatterns' => [
-                        'GET gerarfatura/{cliente_id}/{reserva_id}/{id}' => 'gerarfatura',
-                        'GET listar/{cliente_id}' => 'listarfaturas',
-                        'GET detalhes/{id}' => 'detalhesfatura',
+                        'GET gerarfatura/{nomecliente}/{reserva_id}' => 'gerarfatura',
+                        'GET mostrar/{nomecliente}' => 'mostrarfatura',
+                        'GET {id}/detalhes' => 'detalhesfatura',
                     ],
                     'tokens' => [
                         '{id}' => '<id:\\d+>',
-                        '{cliente_id}' => '<cliente_id:\d+>',
                         '{reserva_id}' => '<reserva_id:\d+>',
+                        '{nomecliente}' => '<nomecliente:\w+>',
                     ],
                 ],
                 [
@@ -109,13 +109,15 @@ return [
                     'extraPatterns' => [
                         'GET calculartotal/{nomecliente}' => 'calculartotal',
                         'POST adicionarcarrinho/{fornecedorid}' => 'adicionarcarrinho',
-                        'DELETE limparcarrinho/{fornecedorid}' => 'removercarrinho',
-                        'PUT atualizarcarrinho/{fornecedorid}' => 'atualizarcarrinho',
+                        'DELETE removercarrinho/{fornecedorid}' => 'removercarrinho',
+                        'GET finalizarcarrinho/{reservaid}' => 'finalizarcarrinho',
+
                     ],
                     'tokens' => [
                         '{id}' => '<id:\\d+>',
                         '{nomecliente}' => '<nomecliente:\w+>',
                         '{fornecedorid}' => '<fornecedorId:\d+>',
+                        '{reservaid}' => '<reservaId:\d+>',
                     ],
                 ],
             ],
