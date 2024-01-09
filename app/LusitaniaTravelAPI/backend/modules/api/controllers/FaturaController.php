@@ -2,12 +2,13 @@
 
 namespace backend\modules\api\controllers;
 
-use backend\modules\api\components\CustomAuth;
+use backend\libs\phpMQTT\phpMQTT;
 use common\models\Fatura;
 use common\models\Reserva;
 use yii\data\ActiveDataProvider;
 use yii\rest\ActiveController;
 use yii\web\BadRequestHttpException;
+use yii\web\ServerErrorHttpException;
 
 class FaturaController extends ActiveController
 {
@@ -69,7 +70,4 @@ class FaturaController extends ActiveController
             throw new \yii\web\NotFoundHttpException('Fatura não encontrada.');
         }
     }
-
-
-
 }

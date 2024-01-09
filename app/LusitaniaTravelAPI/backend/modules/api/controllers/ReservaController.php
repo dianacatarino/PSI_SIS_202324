@@ -2,6 +2,7 @@
 
 namespace backend\modules\api\controllers;
 
+use backend\libs\phpMQTT\phpMQTT;
 use common\models\Confirmacao;
 use common\models\Linhasreserva;
 use common\models\Reserva;
@@ -65,13 +66,6 @@ class ReservaController extends ActiveController
 
         // Obtém o utilizador autenticado
         //$authenticatedUser = $this->user; // Certifique-se de que $this->user foi definido durante a autenticação
-    }
-
-    public function actionCount()
-    {
-        $reservamodel = new $this->modelClass;
-        $recs = $reservamodel::find()->all();
-        return ['count' => count($recs)];
     }
 
     public function actionTaxareservas()
@@ -159,20 +153,19 @@ class ReservaController extends ActiveController
                 throw new ServerErrorHttpException('A reserva não possui uma confirmação associada.');
             }
 
-            // Adicione a lógica para confirmar a reserva aqui
             $confirmacao->estado = 'Confirmado';
-            $confirmacao->dataconfirmacao = date('Y-m-d'); // Adiciona a data de confirmação
+            $confirmacao->dataconfirmacao = date('Y-m-d');
 
             if ($confirmacao->save()) {
-                // Inicializa o cliente MQTT
-                $mqtt = new phpMQTT("127.0.0.1", 1883, "cliente_id");
+                // Faz o publish MQTT quando a reserva é confirmada
+                $this->FazPublishNoMosquitto('reserva', 'confirmada ' . json_encode(['reserva_id' => $id]));
 
-                if ($mqtt->connect()) {
-                    $mqtt->publish("topico/reserva_confirmada", "Reserva confirmada com ID: " . $id);
-                    $mqtt->close();
-                }
-
-                return ['status' => 'success', 'message' => 'Reserva confirmada com sucesso.'];
+                return [
+                    'status' => 'success',
+                    'message' => 'Reserva confirmada com sucesso.',
+                    'confirmacao' => $confirmacao->attributes,
+                    'reserva' => $reserva->attributes,
+                ];
             } else {
                 throw new ServerErrorHttpException('Erro ao salvar a confirmação.');
             }
@@ -198,20 +191,19 @@ class ReservaController extends ActiveController
                 throw new ServerErrorHttpException('A reserva não possui uma confirmação associada.');
             }
 
-            // Atualizar a lógica para cancelar a reserva
             $confirmacao->estado = 'Cancelado';
-            $confirmacao->dataconfirmacao = date('Y-m-d'); // Adiciona apenas a data atual
+            $confirmacao->dataconfirmacao = date('Y-m-d');
 
             if ($confirmacao->save()) {
-                // Inicializa o cliente MQTT
-                $mqtt = new phpMQTT("127.0.0.1", 1883, "cliente_id");
+                // Faz o publish MQTT quando a reserva é cancelada
+                $this->FazPublishNoMosquitto('reserva', 'cancelada ' . json_encode(['reserva_id' => $id]));
 
-                if ($mqtt->connect()) {
-                    $mqtt->publish("topico/reserva_cancelada", "Reserva cancelada com ID: " . $id);
-                    $mqtt->close();
-                }
-
-                return ['status' => 'success', 'message' => 'Reserva cancelada com sucesso.'];
+                return [
+                    'status' => 'success',
+                    'message' => 'Reserva cancelada com sucesso.',
+                    'confirmacao' => $confirmacao->attributes,
+                    'reserva' => $reserva->attributes,
+                ];
             } else {
                 throw new ServerErrorHttpException('Erro ao salvar a confirmação.');
             }

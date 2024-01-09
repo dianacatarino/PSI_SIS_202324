@@ -92,10 +92,14 @@ return [
                     'controller' => ['api/fatura'],
                     'pluralize' => false,
                     'extraPatterns' => [
-                        'GET count' => 'count',
+                        'GET gerarfatura/{cliente_id}/{reserva_id}/{id}' => 'gerarfatura',
+                        'GET listar/{cliente_id}' => 'listarfaturas',
+                        'GET detalhes/{id}' => 'detalhesfatura',
                     ],
                     'tokens' => [
                         '{id}' => '<id:\\d+>',
+                        '{cliente_id}' => '<cliente_id:\d+>',
+                        '{reserva_id}' => '<reserva_id:\d+>',
                     ],
                 ],
                 [
