@@ -58,7 +58,7 @@ return [
                     'controller' => ['api/fornecedor'],
                     'pluralize' => false,
                     'extraPatterns' => [
-                        'GET count' => 'count',
+                        'GET countportipoelocalizacao/{tipo}/{localizacao_alojamento}' => 'countportipoelocalizacao',
                         'GET alojamentos' => 'alojamentos',
                         'GET tipo/{tipo}' => 'tipo',
                         'GET localizacao/{localizacao_alojamento}' => 'localizacao',
@@ -77,11 +77,11 @@ return [
                     'controller' => ['api/reserva'],
                     'pluralize' => false,
                     'extraPatterns' => [
-                        'GET count' => 'count',
                         'GET reservasconfirmadas' => 'reservasconfirmadas',
                         'PUT {id}/confirmar' => 'confirmarreserva',
                         'PUT {id}/cancelar' => 'cancelarreserva',
                         'GET taxareservas' => 'taxareservas',
+                        'GET {id}/detalhes' => 'detalhesreserva',
                     ],
                     'tokens' => [
                         '{id}' => '<id:\\d+>',

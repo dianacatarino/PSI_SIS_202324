@@ -52,12 +52,6 @@ class FornecedorController extends ActiveController
 
             // Verifica se o usuário tem permissão para a ação específica
             if (in_array($userRole, $allowedRoles)) {
-                if ($action === 'avaliacoesmedia' || $action === 'comentariospordata' || $action === 'count') {
-                    // Restringe o acesso às ações avaliacoesmedia, comentariospordata, e count para admin, funcionario, e fornecedor
-                    if (!in_array($userRole, ['admin', 'funcionario', 'fornecedor'])) {
-                        throw new \yii\web\ForbiddenHttpException('Acesso negado para ação ' . $action);
-                    }
-                }
                 // O usuário tem permissão para todas as ações
                 return;
             } elseif ($userRole === 'cliente' && in_array($action, ['create', 'update', 'delete'])) {
@@ -92,12 +86,26 @@ class FornecedorController extends ActiveController
         return $fornecedoresComImagens;
     }
 
-    public function actionCount()
+    public function actionCountportipoelocalizacao($tipo, $localizacao_alojamento)
     {
         $fornecedormodel = new $this->modelClass;
-        $recs = $fornecedormodel::find()->all();
-        return ['count' => count($recs)];
+
+        // Obter todos os fornecedores do tipo e localização específicos
+        $fornecedores = $fornecedormodel::find()
+            ->where(['tipo' => $tipo, 'localizacao_alojamento' => $localizacao_alojamento])
+            ->all();
+
+        // Contar o número de fornecedores
+        $count = count($fornecedores);
+
+        return [
+            'count' => $count,
+            'tipo' => $tipo,
+            'localizacao_alojamento' => $localizacao_alojamento,
+            'fornecedores' => $fornecedores,
+        ];
     }
+
 
     public function actionTipo($tipo)
     {
@@ -175,5 +183,6 @@ class FornecedorController extends ActiveController
             throw new \yii\web\NotFoundHttpException("Nenhuma avaliação encontrada para o alojamento com ID '$id'.");
         }
     }
+
 }
 

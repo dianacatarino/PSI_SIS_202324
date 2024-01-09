@@ -3,6 +3,7 @@
 namespace backend\modules\api\controllers;
 
 use common\models\Confirmacao;
+use common\models\Linhasreserva;
 use common\models\Reserva;
 use common\models\User;
 use Yii;
@@ -10,6 +11,7 @@ use yii\filters\auth\HttpBasicAuth;
 use yii\rest\ActiveController;
 use yii\web\NotFoundHttpException;
 use yii\web\ServerErrorHttpException;
+
 
 class ReservaController extends ActiveController
 {
@@ -30,8 +32,9 @@ class ReservaController extends ActiveController
     public function auth($username, $password)
     {
         $user = \common\models\User::findByUsername($username);
-        if ($user && $user->validatePassword($password)) {
-            $this->user = $user; //Guardar user autenticado
+        if ($user && $user->validatePassword($password))
+        {
+            $this->user=$user; //Guardar user autenticado
             return $user;
         }
         throw new \yii\web\ForbiddenHttpException('No authentication'); //403
@@ -63,13 +66,6 @@ class ReservaController extends ActiveController
 
         // Obtém o utilizador autenticado
         //$authenticatedUser = $this->user; // Certifique-se de que $this->user foi definido durante a autenticação
-    }
-
-    public function actionCount()
-    {
-        $reservamodel = new $this->modelClass;
-        $recs = $reservamodel::find()->all();
-        return ['count' => count($recs)];
     }
 
     public function actionTaxareservas()
@@ -162,14 +158,6 @@ class ReservaController extends ActiveController
             $confirmacao->dataconfirmacao = date('Y-m-d'); // Adiciona a data de confirmação
 
             if ($confirmacao->save()) {
-                // Inicializa o cliente MQTT
-                $mqtt = new phpMQTT("127.0.0.1", 1883, "cliente_id");
-
-                if ($mqtt->connect()) {
-                    $mqtt->publish("topico/reserva_confirmada", "Reserva confirmada com ID: " . $id);
-                    $mqtt->close();
-                }
-
                 return ['status' => 'success', 'message' => 'Reserva confirmada com sucesso.'];
             } else {
                 throw new ServerErrorHttpException('Erro ao salvar a confirmação.');
@@ -201,14 +189,6 @@ class ReservaController extends ActiveController
             $confirmacao->dataconfirmacao = date('Y-m-d'); // Adiciona apenas a data atual
 
             if ($confirmacao->save()) {
-                // Inicializa o cliente MQTT
-                $mqtt = new phpMQTT("127.0.0.1", 1883, "cliente_id");
-
-                if ($mqtt->connect()) {
-                    $mqtt->publish("topico/reserva_cancelada", "Reserva cancelada com ID: " . $id);
-                    $mqtt->close();
-                }
-
                 return ['status' => 'success', 'message' => 'Reserva cancelada com sucesso.'];
             } else {
                 throw new ServerErrorHttpException('Erro ao salvar a confirmação.');
@@ -216,5 +196,41 @@ class ReservaController extends ActiveController
         } catch (\Exception $e) {
             throw new ServerErrorHttpException('Erro interno do servidor.', 500, $e);
         }
+    }
+
+    public function actionDetalhesreserva($id)
+    {
+        $reservaModel = new $this->modelClass;
+
+        $reserva = $reservaModel::findOne($id);
+
+        if (!$reserva) {
+            throw new NotFoundHttpException("Reserva com ID $id não encontrada.");
+        }
+
+        $linhaReserva = Linhasreserva::findOne(['reservas_id' => $id]);
+        $confirmacao = Confirmacao::findOne(['reserva_id' => $id]);
+
+        return [
+            'reserva' => $reserva->attributes,
+            'linha_reserva' => $linhaReserva ? $linhaReserva->attributes : null,
+            'confirmacao' => $confirmacao ? $confirmacao->attributes : null,
+        ];
+    }
+
+    public function FazPublishNoMosquitto($canal,$msg)
+    {
+        $server = "127.0.0.1";
+        $port = 1883;
+        $username = ""; // set your username
+        $password = ""; // set your password
+        $client_id = "phpMQTT-publisher"; // unique!
+        $mqtt = new phpMQTT($server, $port, $client_id);
+        if ($mqtt->connect(true, NULL, $username, $password))
+        {
+            $mqtt->publish($canal, $msg, 0);
+            $mqtt->close();
+        }
+        else { file_put_contents("debug.output","Time out!"); }
     }
 }
