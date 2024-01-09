@@ -12,7 +12,6 @@ use yii\rest\ActiveController;
 use yii\web\NotFoundHttpException;
 use yii\web\ServerErrorHttpException;
 
-
 class ReservaController extends ActiveController
 {
     public $user = null;
@@ -66,6 +65,13 @@ class ReservaController extends ActiveController
 
         // Obtém o utilizador autenticado
         //$authenticatedUser = $this->user; // Certifique-se de que $this->user foi definido durante a autenticação
+    }
+
+    public function actionCount()
+    {
+        $reservamodel = new $this->modelClass;
+        $recs = $reservamodel::find()->all();
+        return ['count' => count($recs)];
     }
 
     public function actionTaxareservas()
@@ -158,6 +164,14 @@ class ReservaController extends ActiveController
             $confirmacao->dataconfirmacao = date('Y-m-d'); // Adiciona a data de confirmação
 
             if ($confirmacao->save()) {
+                // Inicializa o cliente MQTT
+                $mqtt = new phpMQTT("127.0.0.1", 1883, "cliente_id");
+
+                if ($mqtt->connect()) {
+                    $mqtt->publish("topico/reserva_confirmada", "Reserva confirmada com ID: " . $id);
+                    $mqtt->close();
+                }
+
                 return ['status' => 'success', 'message' => 'Reserva confirmada com sucesso.'];
             } else {
                 throw new ServerErrorHttpException('Erro ao salvar a confirmação.');
@@ -189,6 +203,14 @@ class ReservaController extends ActiveController
             $confirmacao->dataconfirmacao = date('Y-m-d'); // Adiciona apenas a data atual
 
             if ($confirmacao->save()) {
+                // Inicializa o cliente MQTT
+                $mqtt = new phpMQTT("127.0.0.1", 1883, "cliente_id");
+
+                if ($mqtt->connect()) {
+                    $mqtt->publish("topico/reserva_cancelada", "Reserva cancelada com ID: " . $id);
+                    $mqtt->close();
+                }
+
                 return ['status' => 'success', 'message' => 'Reserva cancelada com sucesso.'];
             } else {
                 throw new ServerErrorHttpException('Erro ao salvar a confirmação.');
