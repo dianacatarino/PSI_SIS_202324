@@ -7,9 +7,11 @@ use common\models\Confirmacao;
 use common\models\Linhasreserva;
 use common\models\Reserva;
 use common\models\User;
+use frontend\models\Carrinho;
 use Yii;
 use yii\filters\auth\HttpBasicAuth;
 use yii\rest\ActiveController;
+use yii\web\BadRequestHttpException;
 use yii\web\NotFoundHttpException;
 use yii\web\ServerErrorHttpException;
 

@@ -85,6 +85,7 @@ return [
                     ],
                     'tokens' => [
                         '{id}' => '<id:\\d+>',
+                        '{reserva_id}' => '<reserva_id:\d+>',
                     ],
                 ],
                 [
@@ -118,6 +119,22 @@ return [
                         '{nomecliente}' => '<nomecliente:\w+>',
                         '{fornecedorid}' => '<fornecedorId:\d+>',
                         '{reservaid}' => '<reservaId:\d+>',
+                    ],
+                ],
+                [
+                    'class' => 'yii\rest\UrlRule',
+                    'controller' => ['api/user'],
+                    'pluralize' => false,
+                    'extraPatterns' => [
+                        'GET login/{username}/{password}' => 'login',
+                        'POST register' => 'register',
+                        'GET mostrar/{username}' => 'mostraruser',
+
+                    ],
+                    'tokens' => [
+                        '{id}' => '<id:\\d+>',
+                        '{username}' => '<username:[\w\d]+>',
+                        '{password}' => '<password:[\w\d]+>',
                     ],
                 ],
             ],
