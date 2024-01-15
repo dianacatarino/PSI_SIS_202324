@@ -132,7 +132,17 @@ class FornecedorController extends ActiveController
             throw new NotFoundHttpException("Nenhum fornecedor encontrado para a localização '{$localizacao_alojamento}'.");
         }
 
-        return $fornecedores;
+        $fornecedoresComImagens = [];
+
+        // Para cada fornecedor, obtém as imagens associadas
+        foreach ($fornecedores as $fornecedor) {
+            $fornecedorComImagens = $fornecedor->toArray();
+            $fornecedorComImagens['imagens'] = $fornecedor->imagens;
+
+            $fornecedoresComImagens[] = $fornecedorComImagens;
+        }
+
+        return $fornecedoresComImagens;
     }
 
     public function actionComentariospordata($id, $data)
