@@ -77,6 +77,8 @@ class UserController extends ActiveController
         return [
             'status' => 'success',
             'message' => 'Login efetuado com sucesso.',
+            'username' => $username,
+            'password' => $password,
             'access_token' => $user->getAuthKey(),
             'token_type' => 'bearer',
         ];

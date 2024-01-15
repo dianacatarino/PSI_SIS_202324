@@ -82,10 +82,12 @@ return [
                         'PUT {id}/cancelar' => 'cancelarreserva',
                         'GET taxareservas' => 'taxareservas',
                         'GET {id}/detalhes' => 'detalhesreserva',
+                        'GET mostrar/{username}' => 'mostrarreserva',
                     ],
                     'tokens' => [
                         '{id}' => '<id:\\d+>',
                         '{reserva_id}' => '<reserva_id:\d+>',
+                        '{username}' => '<username:\w+>',
                     ],
                 ],
                 [
@@ -96,11 +98,13 @@ return [
                         'GET gerarfatura/{nomecliente}/{reserva_id}' => 'gerarfatura',
                         'GET mostrar/{nomecliente}' => 'mostrarfatura',
                         'GET {id}/detalhes' => 'detalhesfatura',
+                        'GET ver/{username}' => 'verfatura',
                     ],
                     'tokens' => [
                         '{id}' => '<id:\\d+>',
                         '{reserva_id}' => '<reserva_id:\d+>',
                         '{nomecliente}' => '<nomecliente:\w+>',
+                        '{username}' => '<username:\w+>',
                     ],
                 ],
                 [

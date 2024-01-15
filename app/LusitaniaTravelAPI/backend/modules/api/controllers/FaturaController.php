@@ -159,6 +159,52 @@ class FaturaController extends ActiveController
         }
     }
 
+    public function actionVerfatura($username)
+    {
+        // Obter o usuário logado
+        $currentUser = Yii::$app->user->identity;
+
+        // Verificar se o usuário logado tem permissão para acessar as faturas
+        if ($currentUser->username !== $username) {
+            throw new \yii\web\ForbiddenHttpException('Access denied.');
+        }
+
+        // Encontrar todas as reservas associadas ao cliente
+        $reservas = Reserva::find()
+            ->joinWith(['cliente.profile']) // Faz a junção com a tabela de perfil do usuário
+            ->where(['profile.name' => $username])
+            ->all();
+
+        $dadosFaturas = [];
+
+        foreach ($reservas as $reserva) {
+            // Verificar se há faturas associadas à reserva
+            $faturas = Fatura::find()
+                ->where(['reserva_id' => $reserva->id])
+                ->all();
+
+            foreach ($faturas as $fatura) {
+                // Adicionar os atributos da fatura
+                $dadosFatura = [
+                    'id' => $fatura->id,
+                    'totalf' => $fatura->totalf,
+                    'totalsi' => $fatura->totalsi,
+                    'iva' => $fatura->iva,
+                    'empresa_id' => $fatura->empresa_id,
+                    'reserva_id' => $fatura->reserva_id,
+                    'data' => $fatura->data,
+                ];
+
+                $dadosFaturas[] = $dadosFatura;
+            }
+        }
+
+        return [
+            'message' => 'Mostrando faturas para o cliente ' . $username,
+            'faturas' => $dadosFaturas,
+        ];
+    }
+
     public function actionMostrarfatura($nomecliente)
     {
         // Encontrar todas as reservas associadas ao cliente

@@ -261,6 +261,50 @@ class ReservaController extends ActiveController
         ];
     }
 
+    public function actionMostrarreserva($username)
+    {
+        // Obter o usuário logado
+        $currentUser = Yii::$app->user->identity;
+
+        // Verificar se o usuário logado tem permissão para acessar as reservas
+        if ($currentUser->username !== $username) {
+            throw new \yii\web\ForbiddenHttpException('Access denied.');
+        }
+
+        // Encontrar todas as reservas associadas ao cliente
+        $reservas = Reserva::find()
+            ->joinWith(['cliente.profile']) // Faz a junção com a tabela de perfil do user
+            ->where(['profile.name' => $username])
+            ->all();
+
+        $dadosReservas = [];
+
+        foreach ($reservas as $reserva) {
+            $mensagemReserva = 'Mostrando reserva para o cliente ' . $username;
+
+            // Adicionar os atributos da reserva
+            $dadosReserva = [
+                'id' => $reserva->id,
+                'tipo' => $reserva->tipo,
+                'checkin' => $reserva->checkin,
+                'checkout' => $reserva->checkout,
+                'numeroquartos' => $reserva->numeroquartos,
+                'numeroclientes' => $reserva->numeroclientes,
+                'valor' => $reserva->valor,
+                'cliente_id' => $reserva->cliente->profile->name,
+                'funcionario_id' => $reserva->funcionario->profile->name,
+                'fornecedor_id' => $reserva->fornecedor->nome_alojamento,
+            ];
+
+            $dadosReservas[] = $dadosReserva;
+        }
+
+        return [
+            'message' => $mensagemReserva,
+            'reservas' => $dadosReservas,
+        ];
+    }
+
 
     public function FazPublishNoMosquitto($canal,$msg)
     {
