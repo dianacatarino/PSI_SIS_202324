@@ -12,6 +12,7 @@ use yii\filters\auth\HttpBasicAuth;
 use yii\rest\ActiveController;
 use yii\web\BadRequestHttpException;
 use yii\web\NotFoundHttpException;
+use yii\web\ServerErrorHttpException;
 
 class FornecedorController extends ActiveController
 {
@@ -32,9 +33,8 @@ class FornecedorController extends ActiveController
     public function auth($username, $password)
     {
         $user = \common\models\User::findByUsername($username);
-        if ($user && $user->validatePassword($password))
-        {
-            $this->user=$user; //Guardar user autenticado
+        if ($user && $user->validatePassword($password)) {
+            $this->user = $user; //Guardar user autenticado
             return $user;
         }
         throw new \yii\web\ForbiddenHttpException('No authentication'); //403
@@ -84,6 +84,24 @@ class FornecedorController extends ActiveController
         }
 
         return $fornecedoresComImagens;
+    }
+
+    public function actionDetalhesalojamento($id)
+    {
+        // Encontrar o fornecedor com o ID fornecido
+        $fornecedor = Fornecedor::findOne($id);
+
+        if (!$fornecedor) {
+            throw new NotFoundHttpException("Nenhum fornecedor encontrado com o ID '{$id}'.");
+        }
+
+        // Obter detalhes do fornecedor
+        $detalhesAlojamento = $fornecedor->toArray();
+
+        // Adicionar imagens associadas ao fornecedor
+        $detalhesAlojamento['imagens'] = $fornecedor->imagens;
+
+        return $detalhesAlojamento;
     }
 
     public function actionCountportipoelocalizacao($tipo, $localizacao_alojamento)
@@ -193,6 +211,120 @@ class FornecedorController extends ActiveController
             throw new \yii\web\NotFoundHttpException("Nenhuma avaliação encontrada para o alojamento com ID '$id'.");
         }
     }
+
+    public function actionFavoritos()
+    {
+        // Verifica se o usuário está logado
+        if (!Yii::$app->user->isGuest) {
+            // Obtém o perfil do usuário logado
+            $profile = Yii::$app->user->identity->profile;
+
+            // Obtém a lista de favoritos do usuário
+            $favoritos = json_decode($profile->favorites, true);
+
+            if (empty($favoritos)) {
+                return ['favoritos' => []];
+            }
+
+            // Obtém os detalhes dos fornecedores favoritos, incluindo imagens
+            $fornecedoresFavoritos = Fornecedor::find()
+                ->with('imagens') // Carregar relação imagens
+                ->where(['id' => $favoritos])
+                ->asArray()
+                ->all();
+
+            // Retorna a lista de fornecedores favoritos
+            return ['favoritos' => $fornecedoresFavoritos];
+        } else {
+            throw new \yii\web\ForbiddenHttpException('Usuário não autenticado.');
+        }
+    }
+
+    public function actionAdicionarfavorito($fornecedorId)
+    {
+        // Verifica se o usuário está logado
+        if (!Yii::$app->user->isGuest) {
+            // Verifica se o fornecedor com o ID fornecido existe
+            $fornecedor = Fornecedor::find()
+                ->with('imagens') // Carregar relação imagens
+                ->where(['id' => $fornecedorId])
+                ->asArray()
+                ->one();
+
+            if (!$fornecedor) {
+                throw new NotFoundHttpException("Nenhum fornecedor encontrado com o ID '{$fornecedorId}'.");
+            }
+
+            // Obtém o perfil do usuário logado
+            $profile = Yii::$app->user->identity->profile;
+
+            // Obtém a lista de favoritos do usuário
+            $favoritos = json_decode($profile->favorites, true);
+
+            // Adiciona o fornecedor à lista de favoritos se ainda não estiver lá
+            if (!in_array($fornecedorId, $favoritos)) {
+                $favoritos[] = $fornecedorId;
+
+                // Atualiza a lista de favoritos no perfil do usuário
+                $profile->favorites = json_encode($favoritos);
+
+                if ($profile->save()) {
+                    return ['message' => 'Fornecedor adicionado aos favoritos com sucesso.', 'fornecedor' => $fornecedor];
+                } else {
+                    throw new ServerErrorHttpException('Erro ao salvar os favoritos do usuário.');
+                }
+            } else {
+                return ['message' => 'O fornecedor já está na lista de favoritos.'];
+            }
+        } else {
+            throw new \yii\web\ForbiddenHttpException('Usuário não autenticado.');
+        }
+    }
+
+    public function actionRemoverfavorito($fornecedorId)
+    {
+        // Verifica se o usuário está logado
+        if (!Yii::$app->user->isGuest) {
+            // Verifica se o fornecedor com o ID fornecido existe
+            $fornecedor = Fornecedor::find()
+                ->with('imagens') // Carregar relação imagens
+                ->select(['id', 'nome_alojamento', 'outras_informacoes']) // Adicionar outros campos se necessário
+                ->where(['id' => $fornecedorId])
+                ->asArray()
+                ->one();
+
+            if (!$fornecedor) {
+                throw new NotFoundHttpException("Nenhum fornecedor encontrado com o ID '{$fornecedorId}'.");
+            }
+
+            // Obtém o perfil do usuário logado
+            $profile = Yii::$app->user->identity->profile;
+
+            // Obtém a lista de favoritos do usuário
+            $favoritos = json_decode($profile->favorites, true);
+
+            // Remove o fornecedor da lista de favoritos se estiver lá
+            $key = array_search($fornecedorId, $favoritos);
+            if ($key !== false) {
+                unset($favoritos[$key]);
+
+                // Atualiza a lista de favoritos no perfil do usuário
+                $profile->favorites = json_encode($favoritos);
+
+                if ($profile->save()) {
+                    return ['message' => 'Fornecedor removido dos favoritos com sucesso.', 'fornecedor' => $fornecedor];
+                } else {
+                    throw new ServerErrorHttpException('Erro ao salvar os favoritos do usuário.');
+                }
+            } else {
+                return ['message' => 'O fornecedor não está na lista de favoritos.'];
+            }
+        } else {
+            throw new \yii\web\ForbiddenHttpException('Usuário não autenticado.');
+        }
+    }
+
+
 
 }
 

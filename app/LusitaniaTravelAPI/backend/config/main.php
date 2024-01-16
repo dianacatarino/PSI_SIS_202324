@@ -60,16 +60,21 @@ return [
                     'extraPatterns' => [
                         'GET countportipoelocalizacao/{tipo}/{localizacao_alojamento}' => 'countportipoelocalizacao',
                         'GET alojamentos' => 'alojamentos',
+                        'GET alojamento/{id}' => 'detalhesalojamento',
                         'GET tipo/{tipo}' => 'tipo',
                         'GET localizacao/{localizacao_alojamento}' => 'localizacao',
                         'GET {id}/comentariospordata/{data}' => 'comentariospordata',
                         'GET {id}/avaliacoesmedia' => 'avaliacoesmedia',
+                        'GET favoritos' => 'favoritos',
+                        'POST adicionarfavorito/{fornecedorId}' => 'adicionarfavorito',
+                        'DELETE removerfavorito/{fornecedorId}' => 'removerfavorito',
                     ],
                     'tokens' => [
                         '{id}' => '<id:\\d+>',
                         '{tipo}' => '<tipo:[\w\-]+>',
                         '{localizacao_alojamento}' => '<localizacao_alojamento:[^/]+>',
                         '{data}' => '<data:[^/]+>',
+                        '{fornecedorId}' => '<fornecedorId:\\d+>',
                     ],
                 ],
                 [
