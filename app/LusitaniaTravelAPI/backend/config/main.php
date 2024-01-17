@@ -121,6 +121,7 @@ return [
                         'POST adicionarcarrinho/{fornecedorid}' => 'adicionarcarrinho',
                         'DELETE removercarrinho/{fornecedorid}' => 'removercarrinho',
                         'GET finalizarcarrinho/{reservaid}' => 'finalizarcarrinho',
+                        'GET mostrar' => 'mostrarcarrinho',
 
                     ],
                     'tokens' => [

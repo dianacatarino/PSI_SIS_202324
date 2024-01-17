@@ -285,4 +285,40 @@ class CarrinhoController extends ActiveController
             'reserva' => $atributosReserva,
         ];
     }
+
+    public function actionMostrarcarrinho()
+    {
+        // Verifica se o usuário está logado
+        if (!Yii::$app->user->isGuest) {
+            // Obtém o ID do cliente atualmente autenticado
+            $clienteId = Yii::$app->user->identity->id;
+
+            // Obtém todos os itens no carrinho para o cliente específico
+            $itensCarrinho = Carrinho::find()
+                ->where(['cliente_id' => $clienteId])
+                ->all();
+
+            // Inicializa um array para armazenar os detalhes do carrinho
+            $detalhesCarrinho = [];
+
+            // Obtém os detalhes de cada item no carrinho
+            foreach ($itensCarrinho as $item) {
+                $detalhesCarrinho[] = [
+                    'id' => $item->id,
+                    'fornecedor' => $item->fornecedor->nome_alojamento,
+                    'quantidade' => $item->quantidade,
+                    'preco' => $item->preco,
+                    'subtotal' => $item->subtotal,
+                    'reserva_id' => $item->reserva_id,
+                    'estado' => $item->reserva->confirmacao->estado ?? 'Pendente',
+                    'cliente' => $item->cliente->profile->name,
+                ];
+            }
+
+            // Retorna os detalhes do carrinho
+            return ['carrinho' => $detalhesCarrinho];
+        } else {
+            throw new \yii\web\ForbiddenHttpException('Usuário não autenticado.');
+        }
+    }
 }
