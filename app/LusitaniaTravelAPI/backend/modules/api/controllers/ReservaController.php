@@ -7,6 +7,7 @@ use common\models\Confirmacao;
 use common\models\Linhasreserva;
 use common\models\Reserva;
 use common\models\User;
+use DateTime;
 use frontend\models\Carrinho;
 use Yii;
 use yii\filters\auth\HttpBasicAuth;
@@ -34,9 +35,8 @@ class ReservaController extends ActiveController
     public function auth($username, $password)
     {
         $user = \common\models\User::findByUsername($username);
-        if ($user && $user->validatePassword($password))
-        {
-            $this->user=$user; //Guardar user autenticado
+        if ($user && $user->validatePassword($password)) {
+            $this->user = $user; //Guardar user autenticado
             return $user;
         }
         throw new \yii\web\ForbiddenHttpException('No authentication'); //403
@@ -305,8 +305,79 @@ class ReservaController extends ActiveController
         ];
     }
 
+    public function actionVerificar($carrinho_id)
+    {
+        // Encontrar o modelo Carrinho
+        $carrinho = Carrinho::findOne($carrinho_id);
 
-    public function FazPublishNoMosquitto($canal,$msg)
+        // Verificar se o carrinho foi encontrado
+        if ($carrinho === null) {
+            throw new BadRequestHttpException('Carrinho não encontrado.');
+        }
+
+        // Obter a reserva_id do carrinho
+        $reserva = $carrinho->reserva;
+
+        // Verificar se a reserva_id foi encontrada
+        if ($reserva === null) {
+            throw new BadRequestHttpException('Reserva não encontrada para o carrinho fornecido.');
+        }
+
+        $itensCarrinho = Carrinho::find()->where(['reserva_id' => $reserva->id])->all();
+
+        $reserva->checkin = Yii::$app->request->post('checkin');
+        $reserva->checkout = Yii::$app->request->post('checkout');
+        $reserva->numeroclientes = Yii::$app->request->post('numeroclientes');
+        $reserva->numeroquartos = Yii::$app->request->post('numeroquartos');
+        $diasReserva = (new DateTime($reserva->checkout))->diff(new DateTime($reserva->checkin))->days;
+
+        $total = 0;
+
+        foreach ($itensCarrinho as $item) {
+            $total += $diasReserva * $item->fornecedor->precopornoite;
+            $total += $item->subtotal;
+
+            $item->subtotal = $item->subtotal + $diasReserva * $item->fornecedor->precopornoite;
+            $item->save();
+        }
+
+        $reserva->valor = $total;
+
+        if (!$reserva->save()) {
+            throw new BadRequestHttpException('Falha na verificação. Não foi possível salvar a reserva.');
+        }
+
+        $linhaReservas = []; // Inicializa o array de linhas de reserva
+
+        for ($i = 0; $i < $reserva->numeroquartos; $i++) {
+            $linhareserva = new Linhasreserva();
+            $linhareserva->reservas_id = $reserva->id;
+
+            // Verifica se a linha de reserva correspondente está presente no post
+            if (isset(Yii::$app->request->post('linhasreservas')[$i])) {
+                $linhaPost = Yii::$app->request->post('linhasreservas')[$i];
+                $linhareserva->tipoquarto = $linhaPost['tipoquarto'];
+                $linhareserva->numerocamas = $linhaPost['numerocamas'];
+            }
+
+            $linhareserva->numeronoites = $diasReserva;
+            $linhareserva->subtotal = $reserva->valor / $diasReserva;
+            $linhareserva->save();
+
+            // Adiciona os atributos da linha de reserva ao array
+            $linhaReservas[] = $linhareserva->attributes;
+        }
+
+        // Adiciona os atributos da reserva e do array de linhas de reserva ao retorno
+        return [
+            'message' => 'Verificação bem-sucedida!',
+            'reserva' => $reserva->attributes,
+            'linhasreservas' => $linhaReservas, // Corrigido para usar $linhaReservas
+        ];
+    }
+
+
+    public function FazPublishNoMosquitto($canal, $msg)
     {
         $server = "127.0.0.1";
         $port = 1883;
@@ -314,11 +385,11 @@ class ReservaController extends ActiveController
         $password = ""; // set your password
         $client_id = "phpMQTT-publisher"; // unique!
         $mqtt = new phpMQTT($server, $port, $client_id);
-        if ($mqtt->connect(true, NULL, $username, $password))
-        {
+        if ($mqtt->connect(true, NULL, $username, $password)) {
             $mqtt->publish($canal, $msg, 0);
             $mqtt->close();
+        } else {
+            file_put_contents("debug.output", "Time out!");
         }
-        else { file_put_contents("debug.output","Time out!"); }
     }
 }

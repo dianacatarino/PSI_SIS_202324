@@ -236,7 +236,7 @@ class FornecedorController extends ActiveController
             // Retorna a lista de fornecedores favoritos
             return ['favoritos' => $fornecedoresFavoritos];
         } else {
-            throw new \yii\web\ForbiddenHttpException('Usuário não autenticado.');
+            throw new \yii\web\ForbiddenHttpException('User não autenticado.');
         }
     }
 
@@ -277,7 +277,7 @@ class FornecedorController extends ActiveController
                 return ['message' => 'O fornecedor já está na lista de favoritos.'];
             }
         } else {
-            throw new \yii\web\ForbiddenHttpException('Usuário não autenticado.');
+            throw new \yii\web\ForbiddenHttpException('User não autenticado.');
         }
     }
 
@@ -288,7 +288,6 @@ class FornecedorController extends ActiveController
             // Verifica se o fornecedor com o ID fornecido existe
             $fornecedor = Fornecedor::find()
                 ->with('imagens') // Carregar relação imagens
-                ->select(['id', 'nome_alojamento', 'outras_informacoes']) // Adicionar outros campos se necessário
                 ->where(['id' => $fornecedorId])
                 ->asArray()
                 ->one();
@@ -320,11 +319,10 @@ class FornecedorController extends ActiveController
                 return ['message' => 'O fornecedor não está na lista de favoritos.'];
             }
         } else {
-            throw new \yii\web\ForbiddenHttpException('Usuário não autenticado.');
+            throw new \yii\web\ForbiddenHttpException('User não autenticado.');
         }
     }
 
 
 
 }
-

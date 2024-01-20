@@ -88,11 +88,13 @@ return [
                         'GET taxareservas' => 'taxareservas',
                         'GET {id}/detalhes' => 'detalhesreserva',
                         'GET mostrar/{username}' => 'mostrarreserva',
+                        'POST verificar/{carrinho_id}' => 'verificar',
                     ],
                     'tokens' => [
                         '{id}' => '<id:\\d+>',
                         '{reserva_id}' => '<reserva_id:\d+>',
                         '{username}' => '<username:\w+>',
+                        '{carrinho_id}' => '<carrinho_id:\d+>',
                     ],
                 ],
                 [

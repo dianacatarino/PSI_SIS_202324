@@ -189,4 +189,3 @@ class UserController extends ActiveController
         }
     }
 }
-
