@@ -221,6 +221,12 @@ class CarrinhoController extends ActiveController
             $item->delete();
         }
 
+        // Exclua a confirmação associada à reserva
+        Confirmacao::deleteAll(['reserva_id' => $item->reservaId]);
+
+        // Exclua a reserva
+        Reserva::deleteAll(['id' => $item->reservaId]);
+
         // Retorna uma resposta que inclui os atributos do carrinho removido
         return [
             'message' => 'Itens removidos do carrinho com sucesso para o fornecedor ID ' . $fornecedorId,
@@ -266,7 +272,7 @@ class CarrinhoController extends ActiveController
         foreach ($itensCarrinho as $item) {
             foreach ($linhasReservas as $linhaReserva) {
                 $linhaFatura = new LinhasFatura();
-                $linhaFatura->quantidade = $item->quantidade;
+                $linhaFatura->quantidade = count($linhasReservas);
                 $linhaFatura->precounitario = $item->preco;
                 $linhaFatura->subtotal = $item->subtotal;
                 $linhaFatura->iva = 0.23;

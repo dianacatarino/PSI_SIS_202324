@@ -334,10 +334,10 @@ class ReservaController extends ActiveController
         $total = 0;
 
         foreach ($itensCarrinho as $item) {
-            $total += $diasReserva * $item->fornecedor->precopornoite;
+            $total += $diasReserva * $item->fornecedor->precopornoite * $reserva->numeroquartos;
             $total += $item->subtotal;
 
-            $item->subtotal = $item->subtotal + $diasReserva * $item->fornecedor->precopornoite;
+            $item->subtotal = $item->subtotal + $diasReserva * $item->fornecedor->precopornoite * $reserva->numeroquartos;
             $item->save();
         }
 
