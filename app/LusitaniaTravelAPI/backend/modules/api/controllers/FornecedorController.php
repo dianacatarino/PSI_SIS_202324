@@ -12,6 +12,7 @@ use yii\filters\auth\HttpBasicAuth;
 use yii\rest\ActiveController;
 use yii\web\BadRequestHttpException;
 use yii\web\NotFoundHttpException;
+use yii\web\Response;
 use yii\web\ServerErrorHttpException;
 
 class FornecedorController extends ActiveController
@@ -321,6 +322,62 @@ class FornecedorController extends ActiveController
         } else {
             throw new \yii\web\ForbiddenHttpException('User não autenticado.');
         }
+    }
+
+    public function actionComentarios()
+    {
+        Yii::$app->response->format = Response::FORMAT_JSON;
+
+        $userId = Yii::$app->user->id;
+
+        // Buscar todos os comentários do usuário
+        $comentarios = Comentario::find()
+            ->where(['cliente_id' => $userId])
+            ->all();
+
+        // Buscar todas as avaliações do usuário
+        $avaliacoes = Avaliacao::find()
+            ->where(['cliente_id' => $userId])
+            ->all();
+
+        // Organizar as avaliações por fornecedor para facilitar o processamento
+        $avaliacoesPorFornecedor = [];
+        foreach ($avaliacoes as $avaliacao) {
+            $avaliacoesPorFornecedor[$avaliacao->fornecedor_id][] = $avaliacao;
+        }
+
+        // Você pode formatar os dados conforme necessário
+        $data = [
+            'comentarios' => $comentarios,
+            'avaliacoes' => $avaliacoesPorFornecedor,
+        ];
+
+        return $data;
+    }
+
+    public function actionDetalhescomentario($comentarioId)
+    {
+        Yii::$app->response->format = Response::FORMAT_JSON;
+
+        // Lógica para exibir detalhes de um comentário específico
+        $comentario = Comentario::findOne($comentarioId);
+
+        if ($comentario === null) {
+            throw new NotFoundHttpException('Comentário não encontrado.');
+        }
+
+        // Obter avaliações associadas com base em fornecedor_id e user_id
+        $avaliacoes = Avaliacao::find()
+            ->where(['fornecedor_id' => $comentario->fornecedor_id, 'cliente_id' => $comentario->cliente_id])
+            ->all();
+
+        // Você pode formatar os dados conforme necessário
+        $data = [
+            'comentario' => $comentario,
+            'avaliacoes' => $avaliacoes,
+        ];
+
+        return $data;
     }
 
 

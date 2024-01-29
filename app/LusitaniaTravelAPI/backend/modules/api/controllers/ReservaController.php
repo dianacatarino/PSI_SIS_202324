@@ -294,6 +294,7 @@ class ReservaController extends ActiveController
                 'cliente_id' => $reserva->cliente->profile->name,
                 'funcionario_id' => $reserva->funcionario->profile->name,
                 'fornecedor_id' => $reserva->fornecedor->nome_alojamento,
+                'estado' => $reserva->confirmacao->estado,
             ];
 
             $dadosReservas[] = $dadosReserva;

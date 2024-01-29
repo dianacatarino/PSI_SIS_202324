@@ -68,6 +68,8 @@ return [
                         'GET favoritos' => 'favoritos',
                         'POST adicionarfavorito/{fornecedorId}' => 'adicionarfavorito',
                         'DELETE removerfavorito/{fornecedorId}' => 'removerfavorito',
+                        'GET comentarios' => 'comentarios',
+                        'GET comentario/{comentarioId}' => 'detalhescomentario',
                     ],
                     'tokens' => [
                         '{id}' => '<id:\\d+>',
@@ -75,6 +77,7 @@ return [
                         '{localizacao_alojamento}' => '<localizacao_alojamento:[^/]+>',
                         '{data}' => '<data:[^/]+>',
                         '{fornecedorId}' => '<fornecedorId:\\d+>',
+                        '{comentarioId}' => '<comentarioId:\\d+>',
                     ],
                 ],
                 [
@@ -86,7 +89,7 @@ return [
                         'PUT {id}/confirmar' => 'confirmarreserva',
                         'PUT {id}/cancelar' => 'cancelarreserva',
                         'GET taxareservas' => 'taxareservas',
-                        'GET {id}/detalhes' => 'detalhesreserva',
+                        'GET detalhes/{id}' => 'detalhesreserva',
                         'GET mostrar/{username}' => 'mostrarreserva',
                         'POST verificar/{carrinho_id}' => 'verificar',
                     ],
@@ -104,7 +107,7 @@ return [
                     'extraPatterns' => [
                         'GET gerarfatura/{nomecliente}/{reserva_id}' => 'gerarfatura',
                         'GET mostrar/{nomecliente}' => 'mostrarfatura',
-                        'GET {id}/detalhes' => 'detalhesfatura',
+                        'GET detalhes/{id}' => 'detalhesfatura',
                         'GET ver/{username}' => 'verfatura',
                     ],
                     'tokens' => [
