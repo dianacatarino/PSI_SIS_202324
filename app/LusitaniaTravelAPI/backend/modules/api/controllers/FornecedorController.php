@@ -6,6 +6,7 @@ use common\models\Avaliacao;
 use common\models\Comentario;
 use common\models\Fornecedor;
 use common\models\Imagem;
+use common\models\Reserva;
 use Yii;
 use yii\data\ActiveDataProvider;
 use yii\filters\auth\HttpBasicAuth;
@@ -326,8 +327,6 @@ class FornecedorController extends ActiveController
 
     public function actionComentarios()
     {
-        Yii::$app->response->format = Response::FORMAT_JSON;
-
         $userId = Yii::$app->user->id;
 
         // Buscar todos os comentários do usuário
@@ -343,22 +342,50 @@ class FornecedorController extends ActiveController
         // Organizar as avaliações por fornecedor para facilitar o processamento
         $avaliacoesPorFornecedor = [];
         foreach ($avaliacoes as $avaliacao) {
-            $avaliacoesPorFornecedor[$avaliacao->fornecedor_id][] = $avaliacao;
+            // Buscar o nome do fornecedor
+            $fornecedor = Fornecedor::findOne($avaliacao->fornecedor_id);
+            $fornecedorNome = $fornecedor->nome_alojamento;
+
+            $avaliacoesPorFornecedor[$fornecedorNome][] = [
+                'classificacao' => $avaliacao->classificacao,
+                'data_avaliacao' => $avaliacao->data_avaliacao,
+            ];
+        }
+
+        // Combinar comentários com avaliações correspondentes
+        $comentariosAvaliacoes = [];
+        foreach ($comentarios as $comentario) {
+            // Buscar o nome do fornecedor
+            $fornecedor = Fornecedor::findOne($comentario->fornecedor_id);
+            $fornecedorNome = $fornecedor->nome_alojamento;
+
+            // Verificar se há avaliações associadas ao fornecedor
+            $avaliacoesDoFornecedor = isset($avaliacoesPorFornecedor[$fornecedorNome]) ? $avaliacoesPorFornecedor[$fornecedorNome] : [];
+
+            $comentariosAvaliacoes[] = [
+                'comentario' => [
+                    'id' => $comentario->id,
+                    'titulo' => $comentario->titulo,
+                    'descricao' => $comentario->descricao,
+                    'data_comentario' => $comentario->data_comentario,
+                    'cliente_id' => $comentario->cliente_id,
+                    'fornecedor_nome' => $fornecedorNome,
+                ],
+                'avaliacoes' => $avaliacoesDoFornecedor,
+            ];
         }
 
         // Você pode formatar os dados conforme necessário
         $data = [
-            'comentarios' => $comentarios,
-            'avaliacoes' => $avaliacoesPorFornecedor,
+            'comentarios_avaliacoes' => $comentariosAvaliacoes,
         ];
 
         return $data;
     }
 
+
     public function actionDetalhescomentario($comentarioId)
     {
-        Yii::$app->response->format = Response::FORMAT_JSON;
-
         // Lógica para exibir detalhes de um comentário específico
         $comentario = Comentario::findOne($comentarioId);
 
@@ -366,20 +393,109 @@ class FornecedorController extends ActiveController
             throw new NotFoundHttpException('Comentário não encontrado.');
         }
 
+        // Buscar o nome do fornecedor
+        $fornecedor = Fornecedor::findOne($comentario->fornecedor_id);
+        $fornecedorNome = $fornecedor !== null ? $fornecedor->nome_alojamento : null;
+
         // Obter avaliações associadas com base em fornecedor_id e user_id
         $avaliacoes = Avaliacao::find()
             ->where(['fornecedor_id' => $comentario->fornecedor_id, 'cliente_id' => $comentario->cliente_id])
             ->all();
 
-        // Você pode formatar os dados conforme necessário
+        // Formatar os dados
+        $avaliacoesFormatadas = [];
+        foreach ($avaliacoes as $avaliacao) {
+            $avaliacoesFormatadas[] = [
+                'id' => $avaliacao->id,
+                'classificacao' => $avaliacao->classificacao,
+                'data_avaliacao' => $avaliacao->data_avaliacao,
+                'fornecedor_nome' => $fornecedorNome,
+            ];
+        }
+
+        // Combinar o comentário e as avaliações
         $data = [
-            'comentario' => $comentario,
+            'comentario' => [
+                'id' => $comentario->id,
+                'titulo' => $comentario->titulo,
+                'descricao' => $comentario->descricao,
+                'data_comentario' => $comentario->data_comentario,
+                'cliente_id' => $comentario->cliente_id,
+                'fornecedor_nome' => $fornecedorNome,
+            ],
+            'avaliacoes' => $avaliacoesFormatadas,
+        ];
+
+        return $data;
+    }
+
+    public function actionComentariosalojamento($fornecedorId)
+    {
+        // Buscar todos os comentários associados ao fornecedor
+        $comentarios = Comentario::find()
+            ->where(['fornecedor_id' => $fornecedorId])
+            ->all();
+
+        // Buscar todas as avaliações associadas ao fornecedor
+        $avaliacoes = Avaliacao::find()
+            ->where(['fornecedor_id' => $fornecedorId])
+            ->all();
+
+        // Verificar se o fornecedor existe
+        if (empty($comentarios) && empty($avaliacoes)) {
+            throw new NotFoundHttpException('Nenhum comentário ou avaliação encontrado para este fornecedor.');
+        }
+
+        // Formatar os dados conforme necessário
+        $data = [
+            'comentarios' => $comentarios,
             'avaliacoes' => $avaliacoes,
         ];
 
         return $data;
     }
 
+    public function actionAdicionarcomentario($fornecedorId)
+    {
+
+        // Verificar se o usuário fez uma reserva com o fornecedor associado
+        $reservaExistente = Reserva::find()
+            ->where(['cliente_id' => Yii::$app->user->id])
+            ->andWhere(['fornecedor_id' => $fornecedorId])
+            ->exists();
+
+        if (!$reservaExistente) {
+            return ['error' => 'Você precisa de fazer uma reserva neste alojamento para poder adicionar um comentário e avaliação.'];
+        }
+
+        // Criar novos objetos Comentario e Avaliacao
+        $comentario = new Comentario();
+        $avaliacao = new Avaliacao();
+
+        // Carregar dados do request para os objetos
+        $requestData = Yii::$app->request->getBodyParams();
+        $comentario->load($requestData);
+        $avaliacao->load($requestData);
+
+        // Definir o cliente_id e fornecedor_id
+        $comentario->cliente_id = Yii::$app->user->id;
+        $comentario->fornecedor_id = $fornecedorId;
+        $comentario->data_comentario = date('Y-m-d');
+
+        $avaliacao->cliente_id = Yii::$app->user->id;
+        $avaliacao->fornecedor_id = $fornecedorId;
+        $avaliacao->data_avaliacao = date('Y-m-d');
+
+        // Validar e salvar os objetos
+        if ($comentario->validate() && $avaliacao->validate()) {
+            $comentario->save();
+            $avaliacao->save();
+
+            return ['success' => 'Comentário e Avaliação criados com sucesso.'];
+        } else {
+            return ['error' => 'Erro ao validar o Comentário e Avaliação.', 'errors' => array_merge($comentario->errors, $avaliacao->errors)];
+        }
+    }
 
 
 }

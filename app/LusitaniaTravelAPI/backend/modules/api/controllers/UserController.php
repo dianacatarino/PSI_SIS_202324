@@ -188,4 +188,50 @@ class UserController extends ActiveController
             ];
         }
     }
+
+    public function actionAtualizaruser()
+    {
+        // Obter o usuário autenticado
+        $user = Yii::$app->user->identity;
+
+        // Verificar se o usuário está autenticado
+        if (!$user) {
+            return ['error' => 'User não autenticado.'];
+        }
+
+        // Obter o perfil do usuário
+        $profile = $user->profile;
+
+        // Verificar se a solicitação é do tipo PUT
+        if (Yii::$app->request->isPut) {
+            // Carregar os dados do usuário e do perfil a partir do corpo da solicitação
+            $requestData = Yii::$app->request->getBodyParams();
+            $userData = $requestData['User'] ?? [];
+            $profileData = $requestData['Profile'] ?? [];
+
+            // Atribuir os dados do usuário
+            $user->setAttributes($userData);
+
+            // Atribuir os dados do perfil
+            $profile->setAttributes($profileData);
+
+            // Salvar as alterações no usuário
+            $userSaved = $user->save();
+
+            // Salvar as alterações no perfil
+            $profileSaved = $profile->save();
+
+            // Verificar se ambos os modelos foram salvos com sucesso
+            if ($userSaved && $profileSaved) {
+                return ['success' => 'Alterações salvas com sucesso.'];
+            } else {
+                // Se houver erros ao salvar, retornar os erros de validação
+                $errors = array_merge($user->errors, $profile->errors);
+                return ['error' => 'Erro ao salvar as alterações.', 'errors' => $errors];
+            }
+        }
+
+        // Se a solicitação não for do tipo PUT, apenas retornar os dados do usuário e do perfil
+        return ['user' => $user, 'profile' => $profile];
+    }
 }

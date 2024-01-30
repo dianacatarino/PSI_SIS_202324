@@ -70,6 +70,8 @@ return [
                         'DELETE removerfavorito/{fornecedorId}' => 'removerfavorito',
                         'GET comentarios' => 'comentarios',
                         'GET comentario/{comentarioId}' => 'detalhescomentario',
+                        'GET comentariosalojamento/{fornecedorId}' => 'comentariosalojamento',
+                        'POST adicionarcomentario/{fornecedorId}' => 'adicionarcomentario',
                     ],
                     'tokens' => [
                         '{id}' => '<id:\\d+>',
@@ -144,6 +146,7 @@ return [
                         'GET login/{username}/{password}' => 'login',
                         'POST register' => 'register',
                         'GET mostrar/{username}' => 'mostraruser',
+                        'PUT atualizar' => 'atualizaruser',
 
                     ],
                     'tokens' => [
