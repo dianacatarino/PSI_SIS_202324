@@ -368,7 +368,7 @@ class FornecedorController extends ActiveController
                     'titulo' => $comentario->titulo,
                     'descricao' => $comentario->descricao,
                     'data_comentario' => $comentario->data_comentario,
-                    'cliente_id' => $comentario->cliente_id,
+                    'cliente_nome' => $comentario->cliente->profile->name,
                     'fornecedor_nome' => $fornecedorNome,
                 ],
                 'avaliacoes' => $avaliacoesDoFornecedor,
@@ -420,7 +420,7 @@ class FornecedorController extends ActiveController
                 'titulo' => $comentario->titulo,
                 'descricao' => $comentario->descricao,
                 'data_comentario' => $comentario->data_comentario,
-                'cliente_id' => $comentario->cliente_id,
+                'cliente_nome' => $comentario->cliente->profile->name,
                 'fornecedor_nome' => $fornecedorNome,
             ],
             'avaliacoes' => $avaliacoesFormatadas,
@@ -446,10 +446,36 @@ class FornecedorController extends ActiveController
             throw new NotFoundHttpException('Nenhum comentário ou avaliação encontrado para este fornecedor.');
         }
 
-        // Formatar os dados conforme necessário
+        // Organizar as avaliações por fornecedor para facilitar o processamento
+        $avaliacoesPorFornecedor = [];
+        foreach ($avaliacoes as $avaliacao) {
+            $avaliacoesPorFornecedor[$avaliacao->cliente_id][] = [
+                'classificacao' => $avaliacao->classificacao,
+                'data_avaliacao' => $avaliacao->data_avaliacao,
+            ];
+        }
+
+        // Combinar comentários com avaliações correspondentes
+        $comentariosAvaliacoes = [];
+        foreach ($comentarios as $comentario) {
+            $avaliacoesDoCliente = isset($avaliacoesPorFornecedor[$comentario->cliente_id]) ? $avaliacoesPorFornecedor[$comentario->cliente_id] : [];
+
+            $comentariosAvaliacoes[] = [
+                'comentario' => [
+                    'id' => $comentario->id,
+                    'titulo' => $comentario->titulo,
+                    'descricao' => $comentario->descricao,
+                    'data_comentario' => $comentario->data_comentario,
+                    'cliente_nome' => $comentario->cliente->profile->name,
+                    'fornecedor_nome' => $comentario->fornecedor->nome_alojamento,
+                ],
+                'avaliacoes' => $avaliacoesDoCliente,
+            ];
+        }
+
+        // Você pode formatar os dados conforme necessário
         $data = [
-            'comentarios' => $comentarios,
-            'avaliacoes' => $avaliacoes,
+            'comentarios_avaliacoes' => $comentariosAvaliacoes,
         ];
 
         return $data;
