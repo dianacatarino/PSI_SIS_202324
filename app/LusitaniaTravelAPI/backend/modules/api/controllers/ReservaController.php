@@ -266,7 +266,7 @@ class ReservaController extends ActiveController
         // Obter o usuário logado
         $currentUser = Yii::$app->user->identity;
 
-        // Verificar se o usuário logado tem permissão para acessar as reservas
+        // Verificar se o usuário logado corresponde ao username fornecido
         if ($currentUser->username !== $username) {
             throw new \yii\web\ForbiddenHttpException('Access denied.');
         }
@@ -279,25 +279,30 @@ class ReservaController extends ActiveController
 
         $dadosReservas = [];
 
-        foreach ($reservas as $reserva) {
-            $mensagemReserva = 'Mostrando reserva para o cliente ' . $username;
+        // Verificar se existem reservas
+        if (!empty($reservas)) {
+            foreach ($reservas as $reserva) {
+                $mensagemReserva = 'Mostrando reserva para o cliente ' . $username;
 
-            // Adicionar os atributos da reserva
-            $dadosReserva = [
-                'id' => $reserva->id,
-                'tipo' => $reserva->tipo,
-                'checkin' => $reserva->checkin,
-                'checkout' => $reserva->checkout,
-                'numeroquartos' => $reserva->numeroquartos,
-                'numeroclientes' => $reserva->numeroclientes,
-                'valor' => $reserva->valor,
-                'cliente_id' => $reserva->cliente->profile->name,
-                'funcionario_id' => $reserva->funcionario->profile->name,
-                'fornecedor_id' => $reserva->fornecedor->nome_alojamento,
-                'estado' => $reserva->confirmacao->estado,
-            ];
+                // Adicionar os atributos da reserva
+                $dadosReserva = [
+                    'id' => $reserva->id,
+                    'tipo' => $reserva->tipo,
+                    'checkin' => $reserva->checkin,
+                    'checkout' => $reserva->checkout,
+                    'numeroquartos' => $reserva->numeroquartos,
+                    'numeroclientes' => $reserva->numeroclientes,
+                    'valor' => $reserva->valor,
+                    'cliente_id' => $reserva->cliente->profile->name,
+                    'funcionario_id' => $reserva->funcionario->profile->name,
+                    'fornecedor_id' => $reserva->fornecedor->nome_alojamento,
+                    'estado' => $estado = $reserva->confirmacao ? $reserva->confirmacao->estado : null,
+                ];
 
-            $dadosReservas[] = $dadosReserva;
+                $dadosReservas[] = $dadosReserva;
+            }
+        } else {
+            $mensagemReserva = 'Nenhuma reserva criada no momento';
         }
 
         return [

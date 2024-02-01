@@ -222,10 +222,11 @@ class FornecedorController extends ActiveController
             $profile = Yii::$app->user->identity->profile;
 
             // Obtém a lista de favoritos do usuário
-            $favoritos = json_decode($profile->favorites, true);
+            $favoritos = $profile->favorites ? json_decode($profile->favorites, true) : [];
 
+            // Verifica se existem favoritos
             if (empty($favoritos)) {
-                return ['favoritos' => []];
+                return ['message' => 'Não existem favoritos adicionados no momento'];
             }
 
             // Obtém os detalhes dos fornecedores favoritos, incluindo imagens
@@ -338,6 +339,11 @@ class FornecedorController extends ActiveController
         $avaliacoes = Avaliacao::find()
             ->where(['cliente_id' => $userId])
             ->all();
+
+        // Verificar se existem comentários e avaliações
+        if (empty($comentarios) && empty($avaliacoes)) {
+            return ['message' => 'Não existem comentários criados no momento'];
+        }
 
         // Organizar as avaliações por fornecedor para facilitar o processamento
         $avaliacoesPorFornecedor = [];

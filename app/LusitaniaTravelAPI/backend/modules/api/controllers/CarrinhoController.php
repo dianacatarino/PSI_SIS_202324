@@ -304,6 +304,11 @@ class CarrinhoController extends ActiveController
                 ->where(['cliente_id' => $clienteId])
                 ->all();
 
+            // Verifica se o carrinho está vazio
+            if (empty($itensCarrinho)) {
+                return ['message' => 'O carrinho está vazio'];
+            }
+
             // Inicializa um array para armazenar os detalhes do carrinho
             $detalhesCarrinho = [];
 
@@ -324,7 +329,7 @@ class CarrinhoController extends ActiveController
             // Retorna os detalhes do carrinho
             return ['carrinho' => $detalhesCarrinho];
         } else {
-            throw new \yii\web\ForbiddenHttpException('Usuário não autenticado.');
+            throw new \yii\web\ForbiddenHttpException('User não autenticado.');
         }
     }
 }

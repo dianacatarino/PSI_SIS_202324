@@ -177,30 +177,35 @@ class FaturaController extends ActiveController
 
         $dadosFaturas = [];
 
-        foreach ($reservas as $reserva) {
-            // Verificar se há faturas associadas à reserva
-            $faturas = Fatura::find()
-                ->where(['reserva_id' => $reserva->id])
-                ->all();
+        // Verificar se existem reservas
+        if (!empty($reservas)) {
+            foreach ($reservas as $reserva) {
+                // Verificar se há faturas associadas à reserva
+                $faturas = Fatura::find()
+                    ->where(['reserva_id' => $reserva->id])
+                    ->all();
 
-            foreach ($faturas as $fatura) {
-                // Adicionar os atributos da fatura
-                $dadosFatura = [
-                    'id' => $fatura->id,
-                    'totalf' => $fatura->totalf,
-                    'totalsi' => $fatura->totalsi,
-                    'iva' => $fatura->iva,
-                    'empresa_id' => $fatura->empresa_id,
-                    'reserva_id' => $fatura->reserva_id,
-                    'data' => $fatura->data,
-                ];
+                foreach ($faturas as $fatura) {
+                    // Adicionar os atributos da fatura
+                    $dadosFatura = [
+                        'id' => $fatura->id,
+                        'totalf' => $fatura->totalf,
+                        'totalsi' => $fatura->totalsi,
+                        'iva' => $fatura->iva,
+                        'empresa_id' => $fatura->empresa_id,
+                        'reserva_id' => $fatura->reserva_id,
+                        'data' => $fatura->data,
+                    ];
 
-                $dadosFaturas[] = $dadosFatura;
+                    $dadosFaturas[] = $dadosFatura;
+                }
             }
+        } else {
+            $mensagemFatura = 'Nenhuma fatura disponível no momento';
         }
 
         return [
-            'message' => 'Mostrando faturas para o cliente ' . $username,
+            'message' => isset($mensagemFatura) ? $mensagemFatura : 'Mostrando faturas para o cliente ' . $username,
             'faturas' => $dadosFaturas,
         ];
     }
