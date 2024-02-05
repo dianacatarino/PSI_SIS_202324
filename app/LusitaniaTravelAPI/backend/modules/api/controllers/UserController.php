@@ -209,11 +209,19 @@ class UserController extends ActiveController
             $userData = $requestData['User'] ?? [];
             $profileData = $requestData['Profile'] ?? [];
 
-            // Atribuir os dados do usuário
-            $user->setAttributes($userData);
+            // Atribuir os dados do usuário individualmente
+            foreach ($userData as $attribute => $value) {
+                if ($user->hasAttribute($attribute)) {
+                    $user->$attribute = $value;
+                }
+            }
 
-            // Atribuir os dados do perfil
-            $profile->setAttributes($profileData);
+            // Atribuir os dados do perfil individualmente
+            foreach ($profileData as $attribute => $value) {
+                if ($profile->hasAttribute($attribute)) {
+                    $profile->$attribute = $value;
+                }
+            }
 
             // Salvar as alterações no usuário
             $userSaved = $user->save();
