@@ -311,22 +311,14 @@ class ReservaController extends ActiveController
         ];
     }
 
-    public function actionVerificar($carrinho_id)
+    public function actionVerificar($reserva_id)
     {
-        // Encontrar o modelo Carrinho
-        $carrinho = Carrinho::findOne($carrinho_id);
+        // Encontrar o modelo Reserva
+        $reserva = Reserva::findOne($reserva_id);
 
-        // Verificar se o carrinho foi encontrado
-        if ($carrinho === null) {
-            throw new BadRequestHttpException('Carrinho não encontrado.');
-        }
-
-        // Obter a reserva_id do carrinho
-        $reserva = $carrinho->reserva;
-
-        // Verificar se a reserva_id foi encontrada
+        // Verificar se a reserva foi encontrada
         if ($reserva === null) {
-            throw new BadRequestHttpException('Reserva não encontrada para o carrinho fornecido.');
+            throw new BadRequestHttpException('Reserva não encontrada.');
         }
 
         $itensCarrinho = Carrinho::find()->where(['reserva_id' => $reserva->id])->all();
