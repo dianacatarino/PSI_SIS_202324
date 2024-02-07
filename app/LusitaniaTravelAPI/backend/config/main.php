@@ -68,6 +68,7 @@ return [
                         'GET favoritos' => 'favoritos',
                         'POST adicionarfavorito/{fornecedorId}' => 'adicionarfavorito',
                         'DELETE removerfavorito/{fornecedorId}' => 'removerfavorito',
+                        'GET detalhesfavorito/{fornecedorId}' => 'detalhesfavoritos',
                         'GET comentarios' => 'comentarios',
                         'GET comentario/{comentarioId}' => 'detalhescomentario',
                         'GET comentariosalojamento/{fornecedorId}' => 'comentariosalojamento',

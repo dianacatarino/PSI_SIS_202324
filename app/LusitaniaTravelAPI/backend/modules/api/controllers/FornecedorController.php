@@ -261,8 +261,13 @@ class FornecedorController extends ActiveController
             // Obtém o perfil do usuário logado
             $profile = Yii::$app->user->identity->profile;
 
-            // Obtém a lista de favoritos do usuário
-            $favoritos = json_decode($profile->favorites, true);
+            // Verifica se existe algum favorito definido
+            if ($profile->favorites !== null) {
+                // Obtém a lista de favoritos do usuário
+                $favoritos = json_decode($profile->favorites, true);
+            } else {
+                $favoritos = [];
+            }
 
             // Adiciona o fornecedor à lista de favoritos se ainda não estiver lá
             if (!in_array($fornecedorId, $favoritos)) {
@@ -321,6 +326,40 @@ class FornecedorController extends ActiveController
             } else {
                 return ['message' => 'O fornecedor não está na lista de favoritos.'];
             }
+        } else {
+            throw new \yii\web\ForbiddenHttpException('User não autenticado.');
+        }
+    }
+
+    public function actionDetalhesfavoritos($fornecedorId)
+    {
+        // Verifica se o usuário está logado
+        if (!Yii::$app->user->isGuest) {
+            // Obtém o perfil do usuário logado
+            $profile = Yii::$app->user->identity->profile;
+
+            // Obtém a lista de favoritos do usuário
+            $favoritos = $profile->favorites ? json_decode($profile->favorites, true) : [];
+
+            // Verifica se existem favoritos
+            if (empty($favoritos)) {
+                return ['message' => 'Não existem favoritos adicionados no momento'];
+            }
+
+            // Verifica se o fornecedor está nos favoritos do usuário
+            if (!in_array($fornecedorId, $favoritos)) {
+                throw new \yii\web\NotFoundHttpException('Fornecedor não encontrado na lista de favoritos.');
+            }
+
+            // Obtém os detalhes do fornecedor favorito, incluindo imagens
+            $fornecedorFavorito = Fornecedor::find()
+                ->with('imagens') // Carregar relação imagens
+                ->where(['id' => $fornecedorId])
+                ->asArray()
+                ->one();
+
+            // Retorna os detalhes do fornecedor favorito
+            return ['fornecedor' => $fornecedorFavorito];
         } else {
             throw new \yii\web\ForbiddenHttpException('User não autenticado.');
         }
