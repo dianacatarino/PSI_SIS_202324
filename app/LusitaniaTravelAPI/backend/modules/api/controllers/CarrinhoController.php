@@ -10,6 +10,7 @@ use common\models\Reserva;
 use common\models\User;
 use frontend\models\Carrinho;
 use common\models\Fornecedor;
+use Mpdf\Mpdf;
 use Yii;
 use yii\filters\auth\HttpBasicAuth;
 use yii\rest\ActiveController;
@@ -331,5 +332,45 @@ class CarrinhoController extends ActiveController
         } else {
             throw new \yii\web\ForbiddenHttpException('User não autenticado.');
         }
+    }
+
+    public function actionDownloadPagamento($reservaid)
+    {
+        // Buscar a reserva pelo ID fornecido
+        $reserva = Reserva::findOne($reservaid);
+
+        // Verificar se a reserva foi encontrada
+        if ($reserva === null) {
+            throw new NotFoundHttpException('Reserva não encontrada.');
+        }
+
+        // Configurar a instância do mPDF
+        $mpdf = new Mpdf();
+
+        // Adicionar conteúdo ao PDF
+        $content = "
+        <div style='text-align: center;'>
+        <img src='/LusitaniaTravel/frontend/public/img/logo_vertical.png' alt='Logo' style='width: 200px; height: 200px;'>
+        <p>Entidade: 21223</p>
+        <p>Referência: REF" . str_pad($reserva->id, 8, '0', STR_PAD_LEFT) . "</p>
+        <p>Valor: " . Yii::$app->formatter->asCurrency($reserva->valor, 'EUR') . "</p>
+        </div>";
+
+        $mpdf->WriteHTML($content);
+
+        // Definir o nome do arquivo
+        $filename = 'pagamento_' . $reserva->id . '.pdf';
+
+        // Configurar a resposta HTTP para download
+        Yii::$app->response->format = Response::FORMAT_RAW;
+        Yii::$app->response->headers->add('Content-Type', 'application/pdf');
+        Yii::$app->response->headers->add('Content-Disposition', 'attachment; filename="' . $filename . '"');
+
+        // Saída do conteúdo PDF para o navegador
+        Yii::$app->response->content = $mpdf->Output('', 'S');
+
+        // Enviar a resposta e encerrar a execução
+        Yii::$app->response->send();
+        Yii::$app->end();
     }
 }

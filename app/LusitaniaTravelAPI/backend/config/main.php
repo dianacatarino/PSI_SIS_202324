@@ -111,6 +111,8 @@ return [
                         'GET mostrar/{nomecliente}' => 'mostrarfatura',
                         'GET detalhes/{id}' => 'detalhesfatura',
                         'GET ver/{username}' => 'verfatura',
+                        'GET download/{id}' => 'download',
+
                     ],
                     'tokens' => [
                         '{id}' => '<id:\\d+>',
@@ -119,7 +121,7 @@ return [
                         '{username}' => '<username:\w+>',
                     ],
                 ],
-                [
+                ['GET download/{id}' => 'download',
                     'class' => 'yii\rest\UrlRule',
                     'controller' => ['api/carrinho'],
                     'pluralize' => false,
@@ -129,6 +131,7 @@ return [
                         'DELETE removercarrinho/{fornecedorid}' => 'removercarrinho',
                         'GET finalizarcarrinho/{reservaid}' => 'finalizarcarrinho',
                         'GET mostrar' => 'mostrarcarrinho',
+                        'GET download/{reservaid}' => 'downloadpagamento',
 
                     ],
                     'tokens' => [
