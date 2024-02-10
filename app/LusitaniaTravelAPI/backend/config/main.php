@@ -121,14 +121,14 @@ return [
                         '{username}' => '<username:\w+>',
                     ],
                 ],
-                ['GET download/{id}' => 'download',
+                [
                     'class' => 'yii\rest\UrlRule',
                     'controller' => ['api/carrinho'],
                     'pluralize' => false,
                     'extraPatterns' => [
                         'GET calculartotal/{nomecliente}' => 'calculartotal',
-                        'POST adicionarcarrinho/{fornecedorid}' => 'adicionarcarrinho',
-                        'DELETE removercarrinho/{fornecedorid}' => 'removercarrinho',
+                        'POST adicionarcarrinho/{fornecedorId}' => 'adicionarcarrinho',
+                        'DELETE removercarrinho/{fornecedorId}' => 'removercarrinho',
                         'GET finalizarcarrinho/{reservaid}' => 'finalizarcarrinho',
                         'GET mostrar' => 'mostrarcarrinho',
                         'GET download/{reservaid}' => 'downloadpagamento',
@@ -137,8 +137,8 @@ return [
                     'tokens' => [
                         '{id}' => '<id:\\d+>',
                         '{nomecliente}' => '<nomecliente:\w+>',
-                        '{fornecedorid}' => '<fornecedorId:\d+>',
-                        '{reservaid}' => '<reservaId:\d+>',
+                        '{fornecedorId}' => '<fornecedorId:\d+>',
+                        '{reservaId}' => '<reservaId:\d+>',
                     ],
                 ],
                 [

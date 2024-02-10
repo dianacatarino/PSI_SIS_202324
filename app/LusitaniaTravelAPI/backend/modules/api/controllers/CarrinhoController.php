@@ -15,6 +15,7 @@ use Yii;
 use yii\filters\auth\HttpBasicAuth;
 use yii\rest\ActiveController;
 use yii\web\NotFoundHttpException;
+use yii\web\Response;
 use yii\web\ServerErrorHttpException;
 
 class CarrinhoController extends ActiveController
@@ -200,14 +201,7 @@ class CarrinhoController extends ActiveController
         // Inicializa um array para armazenar os atributos do carrinho removido
         $carrinhoRemovido = [];
 
-        // Remove cada item do carrinho
         foreach ($itensCarrinho as $item) {
-            // Remove a confirmação associada à reserva
-            $confirmacao = Confirmacao::findOne(['reserva_id' => $item->reserva_id, 'fornecedor_id' => $fornecedorId]);
-            if ($confirmacao !== null) {
-                $confirmacao->delete();
-            }
-
             // Armazena os atributos do carrinho antes de removê-lo
             $carrinhoRemovido[] = [
                 'nome_alojamento' => $item->fornecedor->nome_alojamento,
@@ -220,13 +214,17 @@ class CarrinhoController extends ActiveController
 
             // Remove o item do carrinho
             $item->delete();
+
+            // Verifica se existe uma confirmação associada à reserva
+            $confirmacao = Confirmacao::findOne(['reserva_id' => $item->reserva_id]);
+            if ($confirmacao !== null) {
+                // Remove a confirmação
+                $confirmacao->delete();
+            }
+
+            // Exclui a reserva associada ao item
+            Reserva::deleteAll(['id' => $item->reserva_id]);
         }
-
-        // Exclua a confirmação associada à reserva
-        Confirmacao::deleteAll(['reserva_id' => $item->reservaId]);
-
-        // Exclua a reserva
-        Reserva::deleteAll(['id' => $item->reservaId]);
 
         // Retorna uma resposta que inclui os atributos do carrinho removido
         return [
@@ -334,10 +332,10 @@ class CarrinhoController extends ActiveController
         }
     }
 
-    public function actionDownloadPagamento($reservaid)
+    public function actionDownloadpagamento($reservaId)
     {
         // Buscar a reserva pelo ID fornecido
-        $reserva = Reserva::findOne($reservaid);
+        $reserva = Reserva::findOne($reservaId);
 
         // Verificar se a reserva foi encontrada
         if ($reserva === null) {

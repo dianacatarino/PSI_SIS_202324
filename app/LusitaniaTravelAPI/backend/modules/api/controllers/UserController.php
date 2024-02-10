@@ -140,7 +140,7 @@ class UserController extends ActiveController
             Yii::$app->response->statusCode = 201; // HTTP status code for resource created successfully
             return [
                 'status' => 'success',
-                'message' => 'User registrado com sucesso.',
+                'message' => 'User registado com sucesso.',
                 'data' => [
                     'user' => $userAttributes,
                     'profile' => $profileAttributes,
@@ -150,7 +150,7 @@ class UserController extends ActiveController
             Yii::$app->response->statusCode = 500; // HTTP status code for internal server error
             return [
                 'status' => 'error',
-                'message' => 'Erro ao processar o registro.',
+                'message' => 'O username já está em uso.',
             ];
         }
     }
